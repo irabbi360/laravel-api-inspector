@@ -529,7 +529,7 @@
 
         .form-group textarea {
             width: 100%;
-            height: 200px;
+            height: auto;
             padding: 10px;
             font-family: monospace;
             border: 1px solid #ddd;
