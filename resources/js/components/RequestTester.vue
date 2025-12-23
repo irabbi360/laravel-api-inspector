@@ -36,11 +36,11 @@
       <div v-if="useJsonEditor" class="json-editor-container">
         <label><strong>Request Body (JSON)</strong></label>
         <textarea
-          :value="requestBody"
+          v-model="jsonBody"
           class="json-editor"
           rows="8"
           placeholder="{}"
-          @input="$emit('update:requestBody', $event.target.value)"
+          @input="updateJsonBody($event.target.value)"
         ></textarea>
       </div>
 
@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps({
   requestBody: {
@@ -109,6 +109,7 @@ const emit = defineEmits(['update:requestBody', 'send-request', 'update:pathPara
 const useJsonEditor = ref(true)
 const formData = ref({})
 const pathParams = ref(props.pathParams)
+const jsonBody = ref('{}')
 
 const hasRequestRules = computed(() => {
   return props.requestRules && Object.keys(props.requestRules).length > 0
@@ -139,8 +140,38 @@ const updateRequestBody = () => {
   Object.keys(formData.value).forEach((key) => {
     body[key] = formData.value[key]
   })
-  emit('update:requestBody', JSON.stringify(body, null, 2))
+  jsonBody.value = JSON.stringify(body, null, 2)
+  emit('update:requestBody', jsonBody.value)
 }
+
+const updateJsonBody = (value) => {
+  jsonBody.value = value
+  emit('update:requestBody', value)
+}
+
+// Initialize formData from requestRules
+watch(
+  () => props.requestRules,
+  (newRules) => {
+    if (newRules) {
+      const newFormData = {}
+      Object.keys(newRules).forEach((key) => {
+        newFormData[key] = newRules[key].example || ''
+      })
+      formData.value = newFormData
+    }
+  },
+  { immediate: true }
+)
+
+// Sync jsonBody with prop
+watch(
+  () => props.requestBody,
+  (newBody) => {
+    jsonBody.value = newBody || '{}'
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

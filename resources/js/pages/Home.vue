@@ -107,7 +107,18 @@ const fetchApiData = async () => {
 
 const selectEndpoint = (route) => {
   selectedRoute.value = JSON.parse(JSON.stringify(route))
-  requestBody.value = '{}'
+  
+  // Initialize requestBody with structure from request_rules
+  if (route.request_rules && Object.keys(route.request_rules).length > 0) {
+    const bodyObject = {}
+    Object.keys(route.request_rules).forEach((key) => {
+      bodyObject[key] = route.request_rules[key].example || ''
+    })
+    requestBody.value = JSON.stringify(bodyObject, null, 2)
+  } else {
+    requestBody.value = '{}'
+  }
+  
   lastResponse.value = null
   pathParams.value = {}
   loadSavedResponses()
@@ -119,7 +130,7 @@ const sendRequest = async () => {
   try {
     sending.value = true
     const url = new URL(
-      `${window.location.origin}${selectedRoute.value.uri}`
+      `${window.location.origin}/${selectedRoute.value.uri}`
     )
 
     // Replace path parameters
@@ -213,7 +224,7 @@ const loadSavedResponses = async () => {
 
   try {
     const response = await fetch(
-      `${window.location.origin}/api/api-inspector-docs/get-saved-responses?route_uri=${encodeURIComponent(selectedRoute.value.uri)}&route_method=${selectedRoute.value.method}`,
+      `${window.location.origin}/api/api-inspector-docs/get-saved-responses?uri=${encodeURIComponent(selectedRoute.value.uri)}&method=${selectedRoute.value.method}`,
       {
         headers: {
           'X-Requested-With': 'XMLHttpRequest'
