@@ -211,10 +211,10 @@ class RequestRuleExtractor
             // If no Validator::make() found, try to extract rules array from return statement
             if (preg_match('/return\s*(\[.+?\];?)/s', $methodCode, $matches)) {
                 $rulesCode = $matches[1];
-                
+
                 // Remove trailing semicolon if present
                 $rulesCode = rtrim($rulesCode, '; \t\n\r');
-                
+
                 // Try to evaluate as PHP array (safely with regex parsing)
                 if (strpos($rulesCode, '[') === 0 && strpos($rulesCode, ']') === strlen($rulesCode) - 1) {
                     return self::extractRulesUsingRegex($rulesCode);
@@ -239,15 +239,15 @@ class RequestRuleExtractor
         if (preg_match('/(?:Validator::make|validator)\s*\([^,]+,\s*(\[)/s', $code, $matches)) {
             // Find the position where the array starts
             $arrayStart = strpos($code, '[', strpos($code, ',')) + 1;
-            
+
             // Extract the complete rules array by counting brackets
             $bracketCount = 0;
             $rulesCode = '[';
             $foundStart = false;
-            
+
             for ($i = $arrayStart; $i < strlen($code); $i++) {
                 $char = $code[$i];
-                
+
                 if ($char === '[') {
                     $bracketCount++;
                     $foundStart = true;
@@ -265,7 +265,7 @@ class RequestRuleExtractor
                     $rulesCode .= $char;
                 }
             }
-            
+
             if (strlen($rulesCode) > 2) {
                 // Use regex extraction instead of eval to avoid syntax errors
                 return self::extractRulesUsingRegex($rulesCode);
@@ -297,12 +297,12 @@ class RequestRuleExtractor
 
         foreach ($fields as $field) {
             $field = trim($field);
-            
+
             // Skip empty fields
             if (empty($field)) {
                 continue;
             }
-            
+
             // Match: 'fieldName' => rules or "fieldName" => rules
             if (preg_match('/^[\'"]([^\'"]+)[\'"]\s*=>\s*(.+)$/s', $field, $match)) {
                 $fieldName = $match[1];
@@ -349,7 +349,7 @@ class RequestRuleExtractor
 
         for ($i = 0; $i < strlen($content); $i++) {
             $char = $content[$i];
-            
+
             // Handle string delimiters
             if (($char === '"' || $char === "'") && ($i === 0 || $content[$i - 1] !== '\\')) {
                 if (! $inString) {
@@ -363,6 +363,7 @@ class RequestRuleExtractor
             // If we're inside a string, just append the character
             if ($inString) {
                 $current .= $char;
+
                 continue;
             }
 
@@ -461,8 +462,6 @@ class RequestRuleExtractor
 
     /**
      * Extract rules from array format like ['required', 'email', Rule::exists(...)]
-     *
-     * @return string
      */
     private static function extractRulesFromArray(string $arrayStr): string
     {
@@ -470,7 +469,7 @@ class RequestRuleExtractor
         $arrayStr = trim($arrayStr, '[]');
 
         // Split by comma at the top level
-        $items = self::splitRulesByTopLevelComma('[' . $arrayStr . ']');
+        $items = self::splitRulesByTopLevelComma('['.$arrayStr.']');
 
         $rules = [];
         foreach ($items as $item) {
@@ -495,11 +494,11 @@ class RequestRuleExtractor
 
                 // Handle common Rule:: methods
                 if (strtolower($ruleName) === 'exists') {
-                    $rules[] = 'exists:' . str_replace(['\'', '"'], '', $ruleArgs);
+                    $rules[] = 'exists:'.str_replace(['\'', '"'], '', $ruleArgs);
                 } elseif (strtolower($ruleName) === 'unique') {
-                    $rules[] = 'unique:' . str_replace(['\'', '"'], '', $ruleArgs);
+                    $rules[] = 'unique:'.str_replace(['\'', '"'], '', $ruleArgs);
                 } elseif (strtolower($ruleName) === 'in') {
-                    $rules[] = 'in:' . str_replace(['\'', '"'], '', $ruleArgs);
+                    $rules[] = 'in:'.str_replace(['\'', '"'], '', $ruleArgs);
                 }
             }
         }

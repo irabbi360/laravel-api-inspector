@@ -13,7 +13,8 @@ class ActionClassExtractionTest extends TestCase
     public function test_extracts_rules_from_action_class(): void
     {
         // Create a test action class
-        $actionClass = new class {
+        $actionClass = new class
+        {
             public function validate()
             {
                 return [
@@ -37,7 +38,8 @@ class ActionClassExtractionTest extends TestCase
      */
     public function test_action_class_rules_have_correct_metadata(): void
     {
-        $actionClass = new class {
+        $actionClass = new class
+        {
             public function rules()
             {
                 return [
@@ -75,7 +77,8 @@ class ActionClassExtractionTest extends TestCase
      */
     public function test_action_without_rules_method_returns_empty(): void
     {
-        $actionClass = new class {
+        $actionClass = new class
+        {
             // No rules method
         };
 
