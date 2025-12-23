@@ -335,7 +335,7 @@ class ApiDocumentationController extends Controller
             'uri' => $routeUri,
             'data' => $responseData,
         ];
-        
+
         Cache::put($cacheKey, $responses, now()->addDays(7));
 
         return response()->json([
