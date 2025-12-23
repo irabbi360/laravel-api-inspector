@@ -14,7 +14,7 @@ class OpenApiGenerator
 
     public function __construct(
         array $routes,
-        string $title = 'Laravel API',
+        string $title = 'Laravel API Inspector',
         string $version = '1.0.0',
         string $baseUrl = 'http://localhost'
     ) {

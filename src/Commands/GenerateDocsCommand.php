@@ -38,20 +38,20 @@ class GenerateDocsCommand extends Command
             return self::FAILURE;
         }
 
-        $this->info('🚀 Generating API documentation...');
+        $this->info('Generating API documentation...');
 
         try {
             // Extract routes
-            $this->info('📍 Extracting routes...');
+            $this->info('Extracting routes...');
             $routes = RouteExtractor::extract();
 
             if (empty($routes)) {
-                $this->warn('⚠️  No API routes found.');
+                $this->warn('No API routes found.');
 
                 return self::SUCCESS;
             }
 
-            $this->info('✅ Found '.count($routes).' routes');
+            $this->info('Found '.count($routes).' routes');
 
             // Enhance routes with request and response data
             $routes = $this->enrichRoutes($routes);
@@ -109,7 +109,7 @@ class GenerateDocsCommand extends Command
      */
     protected function generatePostman(array $routes): void
     {
-        $this->info('📮 Generating Postman collection...');
+        $this->info('Generating Postman collection...');
 
         try {
             $generator = new PostmanGenerator(
@@ -122,10 +122,10 @@ class GenerateDocsCommand extends Command
 
             if (config('api-inspector.output.postman')) {
                 $this->fileWriter->savePostmanCollection($collection);
-                $this->info('✅ Postman collection saved');
+                $this->info('Postman collection saved');
             }
         } catch (\Exception $e) {
-            $this->warn('⚠️  Failed to generate Postman collection: '.$e->getMessage());
+            $this->warn('Failed to generate Postman collection: '.$e->getMessage());
         }
     }
 
@@ -134,7 +134,7 @@ class GenerateDocsCommand extends Command
      */
     protected function generateOpenApi(array $routes): void
     {
-        $this->info('📖 Generating OpenAPI specification...');
+        $this->info('Generating OpenAPI specification...');
 
         try {
             $generator = new OpenApiGenerator(
@@ -148,10 +148,10 @@ class GenerateDocsCommand extends Command
 
             if (config('api-inspector.output.openapi')) {
                 $this->fileWriter->saveOpenApiSpec($spec);
-                $this->info('✅ OpenAPI specification saved');
+                $this->info('OpenAPI specification saved');
             }
         } catch (\Exception $e) {
-            $this->warn('⚠️  Failed to generate OpenAPI spec: '.$e->getMessage());
+            $this->warn('Failed to generate OpenAPI spec: '.$e->getMessage());
         }
     }
 
@@ -160,7 +160,7 @@ class GenerateDocsCommand extends Command
      */
     protected function generateHtml(array $routes): void
     {
-        $this->info('🎨 Generating HTML documentation...');
+        $this->info('Generating HTML documentation...');
 
         try {
             $generator = new HtmlDocsGenerator(
@@ -170,17 +170,24 @@ class GenerateDocsCommand extends Command
             );
 
             $html = $generator->generateHtml();
-            $outputPath = config('api-inspector.response_path') ?? storage_path('api-docs');
+            $outputPath = config('api-inspector.response_path');
+            $storagePath = config('api-inspector.storage_path');
 
+            if ($storagePath === 'local') {
+                $outputPath = public_path($outputPath);
+            } else {
+                $outputPath = storage_path("app/public/{$outputPath}");
+            }
+            
             // Save HTML as raw file
             $directory = dirname("$outputPath/index.html");
             if (! is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
             file_put_contents("$outputPath/index.html", $html);
-            $this->info('✅ HTML documentation saved');
+            $this->info('HTML documentation saved');
         } catch (\Exception $e) {
-            $this->warn('⚠️  Failed to generate HTML documentation: '.$e->getMessage());
+            $this->warn('Failed to generate HTML documentation: '.$e->getMessage());
         }
     }
 }

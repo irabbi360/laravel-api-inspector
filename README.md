@@ -112,7 +112,37 @@ class UserController extends Controller
 }
 ```
 
-### 5. View in Browser
+### 4. Auto Response Schema generate. You can now add the annotation to your controller methods:
+
+```php
+<?php
+    /**
+     * Get user profile
+     * @LAPIresponsesSchema ProfileResource
+     */
+    public function show(User $user)
+    {
+        return new ProfileResource($user);
+    }
+```
+
+Or without the annotation, it will auto-detect from the return type:
+
+```php
+<?php
+    public function show(User $user): ProfileResource
+    {
+        return new ProfileResource($user);
+    }
+```
+
+- ✅ Parse @LAPIresponsesSchema ResourceName from docblocks
+- ✅ Display response schema as JSON format
+- ✅ Recursively handle nested resources
+- ✅ Support unqualified resource names with auto-namespace resolution
+- ✅ Prevent infinite recursion with depth limit
+
+### 6. View in Browser
 
 After generating, automatically view your documentation:
 
