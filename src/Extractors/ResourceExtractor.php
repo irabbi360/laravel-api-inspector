@@ -82,7 +82,7 @@ class ResourceExtractor
 
             // More robust parsing that handles nested parentheses
             $structure = self::parseArrayWithNestedResources($arrayContent);
-            
+
             return $structure ?: null;
         }
 
@@ -96,7 +96,7 @@ class ResourceExtractor
     {
         $structure = [];
         $lines = explode("\n", $arrayContent);
-        
+
         foreach ($lines as $line) {
             $line = trim($line);
             if (empty($line) || $line === ',') {
@@ -141,6 +141,7 @@ class ResourceExtractor
         // Match: new ResourceClass(...)
         if (preg_match('/new\s+([\\\\a-zA-Z_\x7f-\xff][\\\\a-zA-Z0-9_\x7f-\xff]*)\s*\(/', $value, $matches)) {
             $resourceClass = $matches[1];
+
             // Single object instance
             return [
                 'class' => $resourceClass,
@@ -151,6 +152,7 @@ class ResourceExtractor
         // Match: ResourceClass::collection(...) or ::query() or ::paginate()
         if (preg_match('/([\\\\a-zA-Z_\x7f-\xff][\\\\a-zA-Z0-9_\x7f-\xff]*)::(collection|query|paginate)\s*\(/', $value, $matches)) {
             $resourceClass = $matches[1];
+
             // Collection/array of resources
             return [
                 'class' => $resourceClass,

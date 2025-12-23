@@ -22,7 +22,7 @@ return [
     ],
 
     'response_path' => 'api-docs', // Subfolder name
-    
+
     'storage_path' => 'storage', // 'storage' or 'local'
 
     'only_route_uri_start_with' => 'api/',

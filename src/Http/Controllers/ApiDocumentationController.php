@@ -643,15 +643,16 @@ class ApiDocumentationController extends Controller
         if (isset($field['type']) && $field['type'] === 'nested_resource' && isset($field['resource_class'])) {
             $nestedResourceClass = $field['resource_class'];
             $resourceType = $field['resource_type'] ?? 'object'; // 'object' or 'collection'
-            
+
             // Resolve the full namespace if not already fully qualified
             $resolvedClass = $this->resolveResourceNamespace($nestedResourceClass, $parentResourceClass);
-            
+
             // Recursively extract the nested resource schema
             $nestedSchema = $this->extractResourceSchemaRecursively($resolvedClass, $depth + 1);
             if ($nestedSchema) {
                 // Add resource type information
                 $nestedSchema['resource_type'] = $resourceType;
+
                 return $nestedSchema;
             }
         }
@@ -712,41 +713,41 @@ class ApiDocumentationController extends Controller
                 return $fullyQualified;
             }
         }
-        
+
         // Get the namespace from the parent resource class
         $parentNamespace = '';
         if (strpos($parentResourceClass, '\\') !== false) {
             $parentNamespace = substr($parentResourceClass, 0, strrpos($parentResourceClass, '\\'));
         }
-        
+
         // Try to find the resource in the same namespace as parent
         if ($parentNamespace) {
-            $candidateClass = $parentNamespace . '\\' . $resourceClass;
+            $candidateClass = $parentNamespace.'\\'.$resourceClass;
             if (class_exists($candidateClass)) {
                 return $candidateClass;
             }
         }
-        
+
         // Try common resource namespace patterns with multi-level folder support
         $commonNamespaces = [
             'App\\Http\\Resources',
             'App\\Resources',
         ];
-        
+
         foreach ($commonNamespaces as $baseNamespace) {
             // Try direct match: App\Http\Resources\ProfileResource
-            $candidateClass = $baseNamespace . '\\' . $resourceClass;
+            $candidateClass = $baseNamespace.'\\'.$resourceClass;
             if (class_exists($candidateClass)) {
                 return $candidateClass;
             }
-            
+
             // Try searching in subdirectories recursively
             $candidateClass = $this->searchInSubdirectories($baseNamespace, $resourceClass);
             if ($candidateClass) {
                 return $candidateClass;
             }
         }
-        
+
         // If all resolution attempts fail, return original class name
         // ResourceExtractor::extract() will handle the error gracefully
         return $resourceClass;
@@ -759,40 +760,40 @@ class ApiDocumentationController extends Controller
     {
         // Convert namespace to directory path
         $basePath = base_path(str_replace('\\', '/', str_replace('App\\', 'app/', $baseNamespace)));
-        
-        if (!is_dir($basePath)) {
+
+        if (! is_dir($basePath)) {
             return null;
         }
-        
+
         // Get all PHP files recursively
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
-        
+
         foreach ($iterator as $file) {
             if ($file->isFile() && $file->getExtension() === 'php') {
                 $filename = $file->getBasename('.php');
-                
+
                 // Check if filename matches the class name
                 if ($filename === $className) {
                     // Build the namespace from the file path
                     $relativePath = str_replace($basePath, '', $file->getPath());
                     $subNamespace = str_replace('/', '\\', trim($relativePath, '/'));
-                    
+
                     $candidateClass = $baseNamespace;
                     if ($subNamespace) {
-                        $candidateClass .= '\\' . $subNamespace;
+                        $candidateClass .= '\\'.$subNamespace;
                     }
-                    $candidateClass .= '\\' . $className;
-                    
+                    $candidateClass .= '\\'.$className;
+
                     if (class_exists($candidateClass)) {
                         return $candidateClass;
                     }
                 }
             }
         }
-        
+
         return null;
     }
 }
