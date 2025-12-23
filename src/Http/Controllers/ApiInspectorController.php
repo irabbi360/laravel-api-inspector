@@ -6,17 +6,25 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
+use Irabbi360\LaravelApiInspector\Facades\LaravelApiInspector;
 use ReflectionClass;
 use ReflectionMethod;
 
-class ApiDocumentationController extends Controller
+class ApiInspectorController extends Controller
 {
     /**
      * Display API documentation (lightweight HTML)
      */
     public function index()
     {
-        return view('api-inspector::api-docs-spa', []);
+        return view('api-inspector::api-docs', [
+            'lapiScriptVariables' => [
+                'title' => config('api-inspector.title', 'Laravel API Inspector'),
+                'version' => LaravelApiInspector::version(),
+                'app_name' => config('app.name'),
+                'path' => config('api-inspector.route_prefix', '/api-docs'),
+            ],
+        ]);
     }
 
     /**
