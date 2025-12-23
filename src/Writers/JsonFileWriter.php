@@ -37,7 +37,7 @@ class JsonFileWriter
     {
         $storagePath = config('api-inspector.storage_path', 'storage');
         $responsePath = config('api-inspector.response_path', 'api-docs');
-        
+
         if ($storagePath === 'local') {
             // Save to public folder (root public)
             $basePath = public_path($responsePath);
@@ -45,11 +45,11 @@ class JsonFileWriter
             // Save to storage/public folder (default: 'storage')
             $basePath = storage_path("public/{$responsePath}");
         }
-        
+
         if ($subfolder) {
             $basePath = "{$basePath}/{$subfolder}";
         }
-        
+
         return $basePath;
     }
 

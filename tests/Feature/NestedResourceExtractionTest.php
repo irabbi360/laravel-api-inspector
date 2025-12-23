@@ -39,7 +39,7 @@ class NestedResourceExtractionTest extends TestCase
         $this->assertEquals('nested_resource', $schema['items']['type']);
         $this->assertEquals('ItemResource', $schema['items']['resource_class']);
         $this->assertEquals('collection', $schema['items']['resource_type']);
-        
+
         $this->assertArrayHasKey('tags', $schema);
         $this->assertEquals('nested_resource', $schema['tags']['type']);
         $this->assertEquals('TagResource', $schema['tags']['resource_class']);
@@ -61,7 +61,7 @@ class NestedResourceExtractionTest extends TestCase
         $this->assertEquals('nested_resource', $schema['owner']['type']);
         $this->assertEquals('OwnerResource', $schema['owner']['resource_class']);
         $this->assertEquals('object', $schema['owner']['resource_type']);
-        
+
         $this->assertArrayHasKey('metadata', $schema);
         $this->assertEquals('nested_resource', $schema['metadata']['type']);
         $this->assertEquals('ConfigResource', $schema['metadata']['resource_class']);
@@ -81,12 +81,12 @@ class NestedResourceExtractionTest extends TestCase
         );
 
         $this->assertIsArray($schema);
-        
+
         // Regular fields
         $this->assertEquals('string', $schema['id']['type']);
         $this->assertEquals('string', $schema['name']['type']);
         $this->assertEquals('string', $schema['email']['type']);
-        
+
         // Nested resource
         $this->assertEquals('nested_resource', $schema['profile']['type']);
         $this->assertEquals('DetailResource', $schema['profile']['resource_class']);
@@ -106,7 +106,7 @@ class NestedResourceExtractionTest extends TestCase
         $this->assertArrayHasKey('user', $schema);
         $this->assertEquals('nested_resource', $schema['user']['type']);
         $this->assertEquals('\App\Http\Resources\UserResource', $schema['user']['resource_class']);
-        
+
         $this->assertArrayHasKey('settings', $schema);
         $this->assertEquals('nested_resource', $schema['settings']['type']);
         $this->assertEquals('App\Http\Resources\API\SettingsResource', $schema['settings']['resource_class']);
@@ -130,25 +130,25 @@ class NestedResourceExtractionTest extends TestCase
         );
 
         $this->assertIsArray($schema);
-        
+
         // Verify regular fields
         $this->assertEquals('string', $schema['id']['type']);
         $this->assertEquals('string', $schema['regNo']['type']);
         $this->assertEquals('string', $schema['name']['type']);
-        
+
         // Verify nested object resources
         $this->assertEquals('nested_resource', $schema['associationType']['type']);
         $this->assertEquals('AssociationTypeResource', $schema['associationType']['resource_class']);
         $this->assertEquals('object', $schema['associationType']['resource_type']);
-        
+
         $this->assertEquals('nested_resource', $schema['division']['type']);
         $this->assertEquals('DivisionResource', $schema['division']['resource_class']);
         $this->assertEquals('object', $schema['division']['resource_type']);
-        
+
         $this->assertEquals('nested_resource', $schema['district']['type']);
         $this->assertEquals('DistrictResource', $schema['district']['resource_class']);
         $this->assertEquals('object', $schema['district']['resource_type']);
-        
+
         // Verify collection resource
         $this->assertEquals('nested_resource', $schema['tags']['type']);
         $this->assertEquals('TagResource', $schema['tags']['resource_class']);

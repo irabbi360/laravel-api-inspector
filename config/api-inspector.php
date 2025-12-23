@@ -28,7 +28,7 @@ return [
     ],
 
     'response_path' => 'api-docs', // Subfolder name
-    
+
     'storage_path' => 'storage', // 'storage' or 'local'
 
     // Use only routes where ->uri start with next string Using Str::startWith( . e.g. - /api/mobile
