@@ -2,6 +2,7 @@
 
 namespace Irabbi360\LaravelApiInspector;
 
+use Irabbi360\LaravelApiInspector\Commands\GenerateDocsCommand;
 use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -20,6 +21,10 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasMigration('create_laravel_api_inspector_table')
-            ->hasCommand(LaravelApiInspectorCommand::class);
+            ->hasRoutes(['web'])
+            ->hasCommands([
+                GenerateDocsCommand::class,
+                LaravelApiInspectorCommand::class,
+            ]);
     }
 }

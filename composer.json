@@ -1,12 +1,18 @@
 {
     "name": "irabbi360/laravel-api-inspector",
-    "description": "Auto Generate API Documentation for request rules, parameters and API Response",
+    "description": "Laravel Auto Generate API Documentation for request rules, parameters and API Response",
     "keywords": [
         "Irabbi360",
         "laravel",
-        "laravel-api-inspector"
+        "laravel-api-inspector",
+        "api-documentation",
+        "api-docs",
+        "api-inspector",
+        "api-tester"
     ],
     "homepage": "https://github.com/irabbi360/laravel-api-inspector",
+    "type": "library",
+    "version": "1.0.0",
     "license": "MIT",
     "authors": [
         {
