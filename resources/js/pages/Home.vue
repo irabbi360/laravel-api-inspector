@@ -30,6 +30,9 @@
         />
         <div v-else class="empty-state">
           <div class="empty-state-icon">🚀</div>
+          <h6>Welcome to {{ apiData.title }}</h6>
+          <p><strong>Laravel API Inspector</strong> automatically generates API documentation from your Laravel routes, FormRequest validation rules, and API Resources. It's like Postman + Swagger combined, but deeply integrated with Laravel.</p>
+          <p>Version: {{ apiData.version }}</p>
           <p>Select an endpoint from the sidebar to get started</p>
         </div>
       </div>

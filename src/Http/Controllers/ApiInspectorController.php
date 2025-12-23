@@ -103,8 +103,8 @@ class ApiInspectorController extends Controller
             }
 
             return response()->json([
-                'title' => config('api.title') ?? 'Laravel API',
-                'version' => config('api.version') ?? '1.0.0',
+                'title' => config('api-inspector.title') ?? 'Laravel API Inspector',
+                'version' => LaravelApiInspector::version(),
                 'routes' => $routes,
             ]);
         } catch (\Exception $e) {
