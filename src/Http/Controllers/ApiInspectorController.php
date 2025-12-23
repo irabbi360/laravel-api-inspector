@@ -22,7 +22,9 @@ class ApiInspectorController extends Controller
                 'title' => config('api-inspector.title', 'Laravel API Inspector'),
                 'version' => LaravelApiInspector::version(),
                 'app_name' => config('app.name'),
-                'path' => config('api-inspector.route_prefix', '/api-docs'),
+                'path' => config('api-inspector.route_path', '/api-docs'),
+                'route_path' => config('api-inspector.route_path', 'api-docs'),
+                'api_path' => 'api',
             ],
         ]);
     }

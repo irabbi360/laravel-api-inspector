@@ -9,7 +9,7 @@ return [
     * Route where request docs will be served from laravel app.
     * localhost:8080/api-docs
     */
-    'route_prefix' => 'api-docs',
+    'route_path' => 'api-docs',
 
     /*
     |--------------------------------------------------------------------------
