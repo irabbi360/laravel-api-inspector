@@ -12,7 +12,7 @@
      {{-- Package CSS --}}
     <link
         rel="stylesheet"
-        href="{{ asset(config('api-inspector.assets_path'), '/css/app.css') }}"/>
+        href="{{ asset(config('api-inspector.assets_path') . '/css/app.css') }}"/>
 </head>
 
 <body class="h-full px-3 lg:px-5 bg-gray-100 dark:bg-gray-900">
@@ -27,7 +27,7 @@
 </script>
 {{-- Package JS --}}
     <script
-        src="{{ asset(config('api-inspector.assets_path'), '/js/app.js') }}"
+        src="{{ asset(config('api-inspector.assets_path') . '/js/app.js') }}"
         defer
     ></script>
 </body>
