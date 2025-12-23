@@ -3,7 +3,9 @@
     <Topbar
       :api-data="apiData"
       :loading="loading"
+      :auth-token="authToken"
       @refresh="fetchApiData"
+      @update:authToken="(value) => (authToken = value)"
     />
     <div class="main-container">
       <Sidebar
