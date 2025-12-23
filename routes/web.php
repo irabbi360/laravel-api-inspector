@@ -5,6 +5,7 @@ use Irabbi360\LaravelApiInspector\Http\Controllers\ApiDocumentationController;
 
 Route::middleware('web')->group(function () {
     Route::get('/api/docs', [ApiDocumentationController::class, 'index'])->name('api.docs');
+    Route::get('/api/docs/fetch', [ApiDocumentationController::class, 'fetchApiInfo'])->name('api.docs.fetch');
     Route::get('/api/docs/postman', [ApiDocumentationController::class, 'postman'])->name('api.docs.postman');
     Route::get('/api/docs/openapi', [ApiDocumentationController::class, 'openapi'])->name('api.docs.openapi');
     Route::get('/api/docs/realtime', [ApiDocumentationController::class, 'realtimeDocs'])->name('api.docs.realtime');

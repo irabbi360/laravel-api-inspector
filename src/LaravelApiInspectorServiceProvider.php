@@ -18,10 +18,10 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
          */
         $package
             ->name('laravel-api-inspector')
-            ->hasConfigFile('api-inspector')
+            ->hasConfigFile()
             ->hasViews()
             ->hasMigration('create_laravel_api_inspector_table')
-            ->hasRoute('web')
+            ->hasRoutes(['web'])
             ->hasCommands([
                 GenerateDocsCommand::class,
                 LaravelApiInspectorCommand::class,

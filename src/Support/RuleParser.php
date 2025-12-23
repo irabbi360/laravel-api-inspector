@@ -16,11 +16,38 @@ class RuleParser
 
         foreach ($rules as $fieldName => $ruleString) {
             // Handle both string and array rule formats
-            $ruleString = is_array($ruleString) ? implode('|', $ruleString) : $ruleString;
+            if (is_array($ruleString)) {
+                $ruleString = self::convertRulesArrayToString($ruleString);
+            }
             $schema[$fieldName] = self::parseFieldRule($fieldName, $ruleString);
         }
 
         return $schema;
+    }
+
+    /**
+     * Convert array of rules (including Rule objects) to string
+     *
+     * @param  array<string|object>  $rulesArray
+     */
+    private static function convertRulesArrayToString(array $rulesArray): string
+    {
+        $stringRules = [];
+
+        foreach ($rulesArray as $rule) {
+            // If it's a string rule, add it directly
+            if (is_string($rule)) {
+                $stringRules[] = $rule;
+            }
+            // If it's a custom Rule object, get its class name as identifier
+            elseif (is_object($rule)) {
+                $className = class_basename($rule);
+                // Store object rules for potential future validation
+                $stringRules[] = strtolower($className);
+            }
+        }
+
+        return implode('|', $stringRules);
     }
 
     /**
