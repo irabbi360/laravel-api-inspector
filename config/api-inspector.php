@@ -2,21 +2,22 @@
 
 // config for Irabbi360/LaravelApiInspector
 return [
-    'enabled' => env('API_INSPECTOR_ENABLED', true),
+    'enabled' => (bool) config('api-inspector.enabled', true),
 
     'output' => [
-        'openapi' => true,
-        'postman' => true,
-        'html' => true,
+        'openapi' => (bool) config('api-inspector.output.openapi', true),
+        'postman' => (bool) config('api-inspector.output.postman', true),
+        'html' => (bool) config('api-inspector.output.html', true),
     ],
 
-    'save_responses' => true,
+    'save_responses' => (bool) config('api-inspector.save_responses', true),
 
-    'middleware_capture' => true,
+    'middleware_capture' => (bool) config('api-inspector.middleware_capture', true),
 
     'auth' => [
-        'type' => 'bearer',
-        'header' => 'Authorization'
+        'type' => config('api-inspector.auth.type', 'bearer'),
+        'header' => config('api-inspector.auth.header', 'Authorization'),
     ],
-];
 
+    'response_path' => config('api-inspector.response_path', storage_path('api-docs')),
+];
