@@ -4,8 +4,13 @@ namespace Irabbi360\LaravelApiInspector\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use ReflectionClass;
+use ReflectionMethod;
 
 class ApiDocumentationController extends Controller
 {
@@ -480,6 +485,15 @@ class ApiDocumentationController extends Controller
             }
 
             $controllerMethod = $reflection->getMethod($method);
+
+            // First, check for @LAPIresponsesSchema annotation
+            $resourceClass = $this->extractResourceFromDocBlock($controllerMethod);
+
+            if ($resourceClass) {
+                return $this->extractResourceSchemaRecursively($resourceClass);
+            }
+
+            // Fallback: check return type
             $returnType = $controllerMethod->getReturnType();
 
             if (! $returnType) {
@@ -491,13 +505,165 @@ class ApiDocumentationController extends Controller
 
             // Check if it's an Illuminate\Http\Resources\Json\JsonResource
             if (class_exists($returnTypeName) && is_subclass_of($returnTypeName, \Illuminate\Http\Resources\Json\JsonResource::class)) {
-                // Extract resource schema
-                return \Irabbi360\LaravelApiInspector\Extractors\ResourceExtractor::extract($returnTypeName);
+                // Extract resource schema recursively
+                return $this->extractResourceSchemaRecursively($returnTypeName);
             }
 
             return null;
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    private function extractResourceFromDocBlock(ReflectionMethod $method): ?string
+    {
+        $docComment = $method->getDocComment();
+
+        if (! $docComment) {
+            return null;
+        }
+
+        if (! preg_match('/@LAPIresponsesSchema\s+([^\s\*]+)/', $docComment, $matches)) {
+            return null;
+        }
+
+        $resourceClass = trim($matches[1]);
+
+        // Remove trailing symbols
+        $resourceClass = trim($resourceClass, " \t\n\r\0\x0B*/");
+
+        // Fully-qualified class name (starts with \)
+        if (\Str::startsWith($resourceClass, '\\')) {
+            $resourceClass = ltrim($resourceClass, '\\');
+
+            if (class_exists($resourceClass)) {
+                return $resourceClass;
+            }
+        }
+
+        // Check if class exists as-is (already fully qualified without leading \)
+        if (class_exists($resourceClass)) {
+            return $resourceClass;
+        }
+
+        $declaringClass = new ReflectionClass($method->getDeclaringClass()->getName());
+
+        // Check imported "use" statements in the declaring class file
+        $fileName = $declaringClass->getFileName();
+        if ($fileName && file_exists($fileName)) {
+            $fileContent = file_get_contents($fileName);
+
+            // Extract use statements
+            preg_match_all('/^use\s+(.+?);/m', $fileContent, $useMatches);
+
+            foreach ($useMatches[1] as $useStatement) {
+                $useStatement = trim($useStatement);
+
+                // Check for aliased imports: use Foo\Bar as Baz
+                if (preg_match('/(.+)\s+as\s+(\w+)$/', $useStatement, $aliasMatch)) {
+                    if ($aliasMatch[2] === $resourceClass) {
+                        return trim($aliasMatch[1]);
+                    }
+                }
+
+                // Check for direct match
+                if (\Str::endsWith($useStatement, '\\'.$resourceClass)) {
+                    return $useStatement;
+                }
+            }
+        }
+
+        // Try common namespace patterns
+        $appNamespace = app()->getNamespace();
+
+        $guesses = [
+            $appNamespace.'Http\\Resources\\'.$resourceClass,
+            $declaringClass->getNamespaceName().'\\'.$resourceClass,
+            $appNamespace.'Resources\\'.$resourceClass,
+        ];
+
+        foreach ($guesses as $guess) {
+            if (class_exists($guess)) {
+                return $guess;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Recursively extract resource schema including nested resources
+     */
+    private function extractResourceSchemaRecursively(string $resourceClass, int $depth = 0): ?array
+    {
+        // Prevent infinite recursion
+        if ($depth > 5) {
+            return null;
+        }
+
+        $schema = \Irabbi360\LaravelApiInspector\Extractors\ResourceExtractor::extract($resourceClass);
+
+        if (! $schema) {
+            return null;
+        }
+
+        // Format the schema to show proper types
+        $formattedSchema = [];
+        foreach ($schema as $fieldName => $field) {
+            $formattedSchema[$fieldName] = $this->formatFieldType($field, $resourceClass, $depth);
+        }
+
+        return [
+            'resource_class' => $resourceClass,
+            'schema' => $formattedSchema,
+        ];
+    }
+
+    /**
+     * Format field type information
+     */
+    private function formatFieldType($field, string $parentResourceClass, int $depth)
+    {
+        // If it's a nested array/collection, check if it's a resource
+        if (isset($field['nested']) && is_array($field['nested'])) {
+            // Try to determine the nested resource class
+            $nestedSchema = $this->detectNestedResourceSchema($field['nested'], $parentResourceClass, $depth);
+            if ($nestedSchema) {
+                return $nestedSchema;
+            }
+            return 'object';
+        }
+
+        // Return the type or 'mixed' as default
+        $type = $field['type'] ?? 'mixed';
+
+        // Check if it can be null
+        if (isset($field['nullable']) && $field['nullable']) {
+            return $type.' | null';
+        }
+
+        return $type;
+    }
+
+    /**
+     * Detect nested resource schema
+     */
+    private function detectNestedResourceSchema(array $example, string $parentResourceClass, int $depth): ?array
+    {
+        // If depth is too high, just return object
+        if ($depth >= 4) {
+            return null;
+        }
+
+        $formattedExample = [];
+        foreach ($example as $key => $value) {
+            if (is_array($value)) {
+                $formattedExample[$key] = 'object | null';
+            } else {
+                $formattedExample[$key] = 'mixed';
+            }
+        }
+
+        return $formattedExample;
     }
 }

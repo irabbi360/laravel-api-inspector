@@ -1149,37 +1149,32 @@
             props: {
                 schema: Object,
             },
-            data() {
-                return {
-                    showSchema: true,
-                };
-            },
             template: `
-                <div v-if="schema && Object.keys(schema).length > 0" class="section">
+                <div v-if="schema && schema.schema && Object.keys(schema.schema).length > 0" class="section">
                     <div class="section-title">Response Schema</div>
                     <div style="background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
-                            <thead style="background: #fafafa;">
-                                <tr>
-                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Field Name</th>
-                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Type</th>
-                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Example</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr v-for="(field, fieldName) in schema" :key="fieldName">
-                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; font-weight: 600; color: #0066cc;">@{{ fieldName }}</span></td>
-                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; color: #666; background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">@{{ field.type || 'string' }}</span></td>
-                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-family: monospace; font-size: 0.85em;">
-                                        <span v-if="field.format" style="color: #999;">(@{{ field.format }})</span>
-                                        @{{ field.example !== undefined ? field.example : '-' }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div style="margin-bottom: 15px; color: #666; font-size: 0.9em;">
+                            <strong>Resource:</strong> <span style="font-family: monospace; color: #0066cc;">@{{ schema.resource_class }}</span>
+                        </div>
+                        <pre style="background: #f5f5f5; padding: 15px; border-radius: 4px; overflow-x: auto; font-size: 12px; line-height: 1.6; color: #333;"><code>@{{ formatSchema(schema.schema) }}</code></pre>
                     </div>
                 </div>
             `,
+            methods: {
+                formatSchema(schema) {
+                    // Convert schema object to JSON format with proper indentation
+                    const obj = {};
+                    Object.keys(schema).forEach(key => {
+                        const field = schema[key];
+                        if (typeof field === 'object' && field !== null) {
+                            obj[key] = field;
+                        } else {
+                            obj[key] = field;
+                        }
+                    });
+                    return JSON.stringify(obj, null, 2);
+                },
+            },
         });
 
         // Response Viewer Component
