@@ -850,7 +850,7 @@
                             </div>
                             <div v-if="loading" class="loading-spinner"></div>
                             <button v-else @click="$emit('refresh')" class="btn" style="background: #666;">↻ Refresh</button>
-                            <a href="" target="_blank" class="btn" style="background: #666;">Feature Request</a>
+                            <a href="https://github.com/irabbi360/laravel-api-inspector/issues/new" target="_blank" class="btn" style="background: #666;">Feature Request</a>
                         </div>
                     </div>
                 </div>
