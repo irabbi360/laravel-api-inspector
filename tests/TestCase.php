@@ -3,8 +3,8 @@
 namespace Irabbi360\LaravelApiInspector\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Orchestra\Testbench\TestCase as Orchestra;
 use Irabbi360\LaravelApiInspector\LaravelApiInspectorServiceProvider;
+use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {

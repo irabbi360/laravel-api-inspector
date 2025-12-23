@@ -2,9 +2,9 @@
 
 namespace Irabbi360\LaravelApiInspector;
 
+use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 
 class LaravelApiInspectorServiceProvider extends PackageServiceProvider
 {
