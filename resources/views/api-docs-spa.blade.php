@@ -529,7 +529,7 @@
 
         .form-group textarea {
             width: 100%;
-            height: 300px;
+            height: 200px;
             padding: 10px;
             font-family: monospace;
             border: 1px solid #ddd;
@@ -538,7 +538,7 @@
 
         .json-editor {
             width: 100%;
-            height: 300px;
+            height: auto;
             padding: 10px;
             font-family: monospace;
             border: 1px solid #ddd;
@@ -745,6 +745,62 @@
             margin-left: 10px;
             border: 1px solid #ffc107;
         }
+
+        /* Auth Token Input */
+        .auth-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-input-group input {
+            min-height: auto;
+            min-width: 250px;
+            padding: 8px 12px;
+            font-size: 12px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #ccc;
+        }
+
+        .auth-input-group input:focus {
+            border-color: #0066cc;
+            box-shadow: none;
+        }
+
+        .auth-input-group input::placeholder {
+            color: #666;
+        }
+
+        .auth-input-group label {
+            color: #999;
+            font-size: 12px;
+            margin: 0;
+            white-space: nowrap;
+        }
+
+        .auth-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        .auth-status.active {
+            color: #49cc90;
+        }
+
+        .auth-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #999;
+        }
+
+        .auth-status.active .auth-status-dot {
+            background: #49cc90;
+        }
     </style>
 </head>
 <body>
@@ -753,7 +809,7 @@
     </div>
 
     <script>
-        const { createApp, defineComponent, ref, computed, reactive, onMounted } = Vue;
+        const { createApp, defineComponent, ref, computed, reactive, onMounted, watch } = Vue;
 
         // ============ COMPONENTS ============
 
@@ -763,8 +819,9 @@
             props: {
                 apiData: Object,
                 loading: Boolean,
+                authToken: String,
             },
-            emits: ['refresh'],
+            emits: ['refresh', 'update:authToken'],
             template: `
                 <div class="topbar">
                     <div class="topbar-content">
@@ -778,6 +835,19 @@
                             </div>
                         </div>
                         <div class="topbar-actions">
+                            <div class="auth-input-group">
+                                <label>🔐 Bearer Token:</label>
+                                <input
+                                    :value="authToken"
+                                    @input="$emit('update:authToken', $event.target.value)"
+                                    type="password"
+                                    placeholder="Enter auth token..."
+                                />
+                                <div :class="['auth-status', { active: authToken }]">
+                                    <span class="auth-status-dot"></span>
+                                    @{{ authToken ? 'Authenticated' : 'No token' }}
+                                </div>
+                            </div>
                             <div v-if="loading" class="loading-spinner"></div>
                             <button v-else @click="$emit('refresh')" class="btn" style="background: #666;">↻ Refresh</button>
                         </div>
@@ -802,7 +872,7 @@
                             v-for="route in routes"
                             :key="route.method + '-' + route.uri"
                             @click="$emit('select-endpoint', route)"
-                            :class="['sidebar-route', { active: selectedRoute && selectedRoute.uri === route.uri && selectedRoute.method === route.method }]"
+                            :class="['sidebar-route', { active: selectedRoute && selectedRoute.method === route.method && selectedRoute.uri === route.uri }]"
                         >
                             <span class="route-method-badge" :class="route.method.toLowerCase()">
                                 @{{ route.method.substring(0, 3) }}
@@ -958,13 +1028,13 @@
                     <div class="section-title">Send Request</div>
                     <div class="request-tester">
                         <div v-if="hasRequestRules" class="tester-tabs">
-                            <button 
+                            <button
                                 @click="useJsonEditor = false"
                                 :class="['tab-btn', { active: !useJsonEditor }]"
                             >
                                 📝 Form Fields
                             </button>
-                            <button 
+                            <button
                                 @click="useJsonEditor = true"
                                 :class="['tab-btn', { active: useJsonEditor }]"
                             >
@@ -982,7 +1052,7 @@
                                 <input
                                     v-model="formData[fieldName]"
                                     :type="getInputType(fieldName)"
-                                    :placeholder="field.example || 'Enter ' + fieldName"
+                                    :placeholder="field.example"
                                     class="field-input"
                                 />
                                 <span v-if="field.description" class="field-description">@{{ field.description }}</span>
@@ -992,9 +1062,9 @@
 
                         <div v-if="hasRequestRules && useJsonEditor" class="json-editor-container">
                             <label>Request Body (JSON)</label>
-                            <textarea 
-                                :value="requestBody" 
-                                @input="$emit('update:requestBody', $event.target.value)" 
+                            <textarea
+                                :value="requestBody"
+                                @input="$emit('update:requestBody', $event.target.value)"
                                 placeholder="Enter JSON request body"
                                 class="json-editor"
                             ></textarea>
@@ -1002,9 +1072,9 @@
 
                         <div v-if="!hasRequestRules" class="form-group">
                             <label>Request Body (JSON)</label>
-                            <textarea 
-                                :value="requestBody" 
-                                @input="$emit('update:requestBody', $event.target.value)" 
+                            <textarea
+                                :value="requestBody"
+                                @input="$emit('update:requestBody', $event.target.value)"
                                 placeholder="Enter JSON request body"
                                 class="json-editor"
                             ></textarea>
@@ -1025,6 +1095,11 @@
                 response: Object,
             },
             emits: ['save-response'],
+            data() {
+                return {
+                    showHeaders: false,
+                };
+            },
             template: `
                 <div v-if="response" class="section">
                     <div class="section-title">Response</div>
@@ -1032,10 +1107,39 @@
                         <div class="response-status" :class="response.status >= 200 && response.status < 300 ? 'success' : 'error'">
                             Status: @{{ response.status }} @{{ response.statusText || '' }}
                         </div>
-                        <div class="response-code">
-                            @{{ JSON.stringify(response, null, 2) }}
+
+                        <div style="margin: 15px 0; border-top: 1px solid #ddd; padding-top: 15px;">
+                            <button
+                                @click="showHeaders = !showHeaders"
+                                style="background: #666; margin-bottom: 10px;"
+                                class="btn"
+                            >
+                                @{{ showHeaders ? '▼' : '▶' }} Response Headers
+                            </button>
+
+                            <div v-if="showHeaders" style="background: #f5f5f5; padding: 10px; border-radius: 4px; margin-bottom: 15px; max-height: 200px; overflow-y: auto;">
+                                <div v-if="response.headers && Object.keys(response.headers).length > 0">
+                                    <div v-for="(value, header) in response.headers" :key="header" style="font-size: 12px; margin-bottom: 5px; word-break: break-all;">
+                                        <strong>@{{ header }}:</strong> @{{ value }}
+                                    </div>
+                                </div>
+                                <div v-else style="color: #999; font-size: 12px;">
+                                    <p>No headers available</p>
+                                    <p style="margin-top: 5px; font-size: 11px; color: #aaa;">
+                                        Note: Due to browser CORS policy, some headers may not be accessible. The server can expose additional headers using the Access-Control-Expose-Headers header.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <button @click="$emit('save-response')" class="btn" style="margin-top: 15px; background: #27ae60;">💾 Save Response</button>
+
+                        <div style="margin-bottom: 15px;">
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Response Body:</label>
+                            <div class="response-code">
+                                @{{ typeof response.body === 'string' ? response.body : JSON.stringify(response.body, null, 2) }}
+                            </div>
+                        </div>
+
+                        <button @click="$emit('save-response')" class="btn" style="background: #27ae60;">💾 Save Response</button>
                     </div>
                 </div>
             `,
@@ -1050,16 +1154,21 @@
             emits: ['view-response'],
             template: `
                 <div v-if="responses && responses.length > 0" class="section">
-                    <div class="section-title">Saved Responses</div>
+                    <div class="section-title">Saved Responses History</div>
                     <div class="saved-responses">
                         <div
                             v-for="(saved, index) in responses"
                             :key="index"
-                            @click="$emit('view-response', saved)"
+                            @click="$emit('view-response', saved.data)"
                             class="saved-response-item"
                         >
-                            <div class="saved-response-time">@{{ new Date(saved.created_at).toLocaleString() }}</div>
-                            <div style="margin-top: 5px; color: #666;">Status: @{{ saved.response?.status || 'Unknown' }}</div>
+                            <div class="saved-response-time">@{{ new Date(saved.timestamp).toLocaleString() }}</div>
+                            <div style="margin-top: 8px; font-size: 13px;">
+                                <span style="color: #666;"><strong>Status:</strong> @{{ saved.data?.status || 'Unknown' }}</span>
+                                <span v-if="saved.data?.body?.length" style="color: #999; margin-left: 15px;">
+                                    <strong>Size:</strong> @{{ (JSON.stringify(saved.data.body).length / 1024).toFixed(2) }}KB
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1116,18 +1225,18 @@
                             <RequestBodySection :request-rules="route?.request_rules" />
                         </div>
                         <div class="detail-body-right">
-                            <RequestTester 
+                            <RequestTester
                                 :request-body="requestBody"
                                 :request-rules="route?.request_rules"
                                 :sending="sending"
                                 @update:requestBody="$emit('update:requestBody', $event)"
                                 @send-request="$emit('send-request')"
                             />
-                            <ResponseViewer 
+                            <ResponseViewer
                                 :response="lastResponse"
                                 @save-response="$emit('save-response')"
                             />
-                            <SavedResponses 
+                            <SavedResponses
                                 :responses="savedResponses"
                                 @view-response="$emit('view-response', $event)"
                             />
@@ -1153,6 +1262,7 @@
                 const requestBody = ref('{}');
                 const lastResponse = ref(null);
                 const savedResponses = ref([]);
+                const authToken = ref(localStorage.getItem('api-docs-auth-token') || '');
 
                 const groupedRoutes = computed(() => {
                     if (!apiData.value.routes) return {};
@@ -1187,7 +1297,8 @@
                 };
 
                 const selectEndpoint = (route) => {
-                    selectedRoute.value = route;
+                    // Ensure we're updating with a fresh copy to trigger reactivity
+                    selectedRoute.value = JSON.parse(JSON.stringify(route));
                     requestBody.value = '{}';
                     lastResponse.value = null;
                     loadSavedResponses();
@@ -1198,22 +1309,83 @@
 
                     try {
                         sending.value = true;
-                        const response = await fetch('/api/test-request', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
-                            },
-                            body: JSON.stringify({
-                                method: selectedRoute.value.method,
-                                uri: selectedRoute.value.uri,
-                                body: requestBody.value ? JSON.parse(requestBody.value) : {},
-                            }),
+
+                        // Build the request headers with JSON content type
+                        const headers = new Headers({
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                        });
+                        console.log('Sending request to:', selectedRoute.value);
+                        console.log('With body:', authToken.value);
+
+                        // Add auth header if token is provided and route requires auth
+                        if (authToken.value && selectedRoute.value.requires_auth) {
+                            headers.append('Authorization', `Bearer ${authToken.value}`);
+                        }
+
+                        // Parse request body
+                        let requestData = {};
+                        let bodyToSend = undefined;
+
+                        try {
+                            if (requestBody.value && requestBody.value.trim()) {
+                                requestData = JSON.parse(requestBody.value);
+                                bodyToSend = JSON.stringify(requestData);
+                            }
+                        } catch (e) {
+                            lastResponse.value = { error: 'Invalid JSON in request body', status: 400 };
+                            sending.value = false;
+                            return;
+                        }
+
+                        // Build the URL with base path
+                        const baseUrl = window.location.origin;
+                        const url = `${baseUrl}/${selectedRoute.value.uri.replace(/^\//, '')}`;
+
+                        // Build fetch options
+                        const fetchOptions = {
+                            method: selectedRoute.value.method,
+                            headers: headers,
+                            mode: 'cors',
+                            credentials: 'include',
+                        };
+
+                        // Only add body for methods that support it
+                        if (!['GET', 'HEAD'].includes(selectedRoute.value.method)) {
+                            fetchOptions.body = bodyToSend;
+                        }
+
+                        // Make the actual API request
+                        const response = await fetch(url, fetchOptions);
+
+                        // Capture response details
+                        const responseText = await response.text();
+                        let responseBody = null;
+
+                        try {
+                            responseBody = JSON.parse(responseText);
+                        } catch (e) {
+                            responseBody = responseText;
+                        }
+
+                        // Capture response headers
+                        const responseHeaders = {};
+                        response.headers.forEach((value, name) => {
+                            responseHeaders[name] = value;
                         });
 
-                        lastResponse.value = await response.json();
+                        lastResponse.value = {
+                            status: response.status,
+                            statusText: response.statusText,
+                            headers: responseHeaders,
+                            body: responseBody,
+                        };
                     } catch (error) {
-                        lastResponse.value = { error: error.message, status: 0 };
+                        lastResponse.value = {
+                            error: error.message,
+                            status: 0,
+                            statusText: 'Network Error'
+                        };
                     } finally {
                         sending.value = false;
                     }
@@ -1249,7 +1421,8 @@
                         const response = await fetch(
                             `/api/saved-responses?method=${encodeURIComponent(selectedRoute.value.method)}&uri=${encodeURIComponent(selectedRoute.value.uri)}`
                         );
-                        savedResponses.value = await response.json();
+                        const data = await response.json();
+                        savedResponses.value = data.responses || [];
                     } catch (error) {
                         console.error('Failed to load saved responses:', error);
                         savedResponses.value = [];
@@ -1257,8 +1430,17 @@
                 };
 
                 const viewSavedResponse = (saved) => {
-                    lastResponse.value = saved.response;
+                    lastResponse.value = saved;
                 };
+
+                // Watch for authToken changes and save to localStorage
+                watch(authToken, (newToken) => {
+                    if (newToken) {
+                        localStorage.setItem('api-docs-auth-token', newToken);
+                    } else {
+                        localStorage.removeItem('api-docs-auth-token');
+                    }
+                });
 
                 onMounted(() => {
                     fetchApiData();
@@ -1272,6 +1454,7 @@
                     requestBody,
                     lastResponse,
                     savedResponses,
+                    authToken,
                     groupedRoutes,
                     fetchApiData,
                     selectEndpoint,
@@ -1283,13 +1466,15 @@
             },
             template: `
                 <div>
-                    <Topbar 
+                    <Topbar
                         :api-data="apiData"
                         :loading="loading"
+                        :auth-token="authToken"
                         @refresh="fetchApiData"
+                        @update:authToken="authToken = $event"
                     />
                     <div class="main-container">
-                        <Sidebar 
+                        <Sidebar
                             :grouped-routes="groupedRoutes"
                             :selected-route="selectedRoute"
                             @select-endpoint="selectEndpoint"
@@ -1299,7 +1484,7 @@
                                 <div class="empty-state-icon">📚</div>
                                 <p>Select an endpoint to view details</p>
                             </div>
-                            <EndpointDetail 
+                            <EndpointDetail
                                 v-else
                                 :route="selectedRoute"
                                 :request-body="requestBody"

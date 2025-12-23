@@ -204,7 +204,7 @@ class ApiDocumentationController extends Controller
     {
         $middleware = $route->middleware() ?? [];
 
-        return in_array('auth', $middleware) || in_array('auth:api', $middleware);
+        return in_array('auth', $middleware) || in_array('auth:api', $middleware) || in_array('auth:sanctum', $middleware);
     }
 
     /**
@@ -335,7 +335,7 @@ class ApiDocumentationController extends Controller
             'uri' => $routeUri,
             'data' => $responseData,
         ];
-        
+
         Cache::put($cacheKey, $responses, now()->addDays(7));
 
         return response()->json([
