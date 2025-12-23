@@ -4,11 +4,8 @@ namespace Irabbi360\LaravelApiInspector\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -491,7 +488,7 @@ class ApiDocumentationController extends Controller
                 return null;
             }
 
-            list($controller, $method) = explode('@', $controllerName);
+            [$controller, $method] = explode('@', $controllerName);
 
             if (! class_exists($controller)) {
                 return null;
@@ -666,6 +663,7 @@ class ApiDocumentationController extends Controller
             if ($nestedSchema) {
                 return $nestedSchema;
             }
+
             return 'object';
         }
 
