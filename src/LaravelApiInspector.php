@@ -4,7 +4,8 @@ namespace Irabbi360\LaravelApiInspector;
 
 use Composer\InstalledVersions;
 
-class LaravelApiInspector {
+class LaravelApiInspector
+{
     /**
      * Get the current version of the Log Viewer
      */

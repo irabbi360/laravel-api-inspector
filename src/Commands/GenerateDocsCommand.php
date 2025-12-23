@@ -178,7 +178,7 @@ class GenerateDocsCommand extends Command
             } else {
                 $outputPath = storage_path("app/public/{$outputPath}");
             }
-            
+
             // Save HTML as raw file
             $directory = dirname("$outputPath/index.html");
             if (! is_dir($directory)) {
