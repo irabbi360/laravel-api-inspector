@@ -961,8 +961,10 @@
                 requestBody: String,
                 requestRules: Object,
                 sending: Boolean,
+                route: Object,
+                pathParams: Object,
             },
-            emits: ['update:requestBody', 'send-request'],
+            emits: ['update:requestBody', 'send-request', 'update:pathParams'],
             data() {
                 return {
                     formData: {},
@@ -972,6 +974,17 @@
             computed: {
                 hasRequestRules() {
                     return this.requestRules && Object.keys(this.requestRules).length > 0;
+                },
+                extractedPathParams() {
+                    if (!this.route || !this.route.uri) return {};
+                    const matches = this.route.uri.match(/{([^}]+)}/g);
+                    if (!matches) return {};
+                    const params = {};
+                    matches.forEach(match => {
+                        const paramName = match.replace(/{|}/g, '');
+                        params[paramName] = this.pathParams[paramName] || '';
+                    });
+                    return params;
                 },
             },
             watch: {
@@ -1027,6 +1040,48 @@
                 <div class="section">
                     <div class="section-title">Send Request</div>
                     <div class="request-tester">
+                        <div v-if="Object.keys(extractedPathParams).length > 0" style="margin-bottom: 20px; padding: 15px; background: #f0f7ff; border: 1px solid #b3d9ff; border-radius: 4px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #0066cc;">📋 Path Parameters</div>
+                            <div class="form-fields-container">
+                                <div v-for="(value, paramName) in extractedPathParams" :key="paramName" class="form-field-group" style="margin-bottom: 12px;">
+                                    <label class="field-label">
+                                        <span class="field-name">@{{ paramName }}</span>
+                                        <span class="field-required">required</span>
+                                    </label>
+                                    <input
+                                        :value="pathParams[paramName] || ''"
+                                        @input="$emit('update:pathParams', { ...pathParams, [paramName]: $event.target.value })"
+                                        type="text"
+                                        :placeholder="'Enter ' + paramName"
+                                        class="field-input"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="hasRequestRules" style="margin-bottom: 20px; padding: 15px; background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px;">
+                            <div style="font-weight: 600; margin-bottom: 12px; color: #333;">📊 Request Body Parameters</div>
+                            <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                                <thead style="background: #fafafa;">
+                                    <tr>
+                                        <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Name</th>
+                                        <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Type</th>
+                                        <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Required</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(field, fieldName) in requestRules" :key="fieldName">
+                                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; font-weight: 600; color: #0066cc;">@{{ fieldName }}</span></td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; color: #666; background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">@{{ field.type || 'string' }}</span></td>
+                                        <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;">
+                                            <span v-if="field.required" style="background: #ffebee; color: #c62828; padding: 2px 6px; border-radius: 3px; font-size: 0.75em; font-weight: 600;">required</span>
+                                            <span v-else style="color: #999; font-size: 0.85em;">optional</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
                         <div v-if="hasRequestRules" class="tester-tabs">
                             <button
                                 @click="useJsonEditor = false"
@@ -1206,8 +1261,9 @@
                 lastResponse: Object,
                 savedResponses: Array,
                 sending: Boolean,
+                pathParams: Object,
             },
-            emits: ['update:requestBody', 'send-request', 'save-response', 'view-response'],
+            emits: ['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams'],
             components: {
                 DetailHeader,
                 ParametersSection,
@@ -1228,8 +1284,11 @@
                             <RequestTester
                                 :request-body="requestBody"
                                 :request-rules="route?.request_rules"
+                                :route="route"
+                                :path-params="pathParams"
                                 :sending="sending"
                                 @update:requestBody="$emit('update:requestBody', $event)"
+                                @update:pathParams="$emit('update:pathParams', $event)"
                                 @send-request="$emit('send-request')"
                             />
                             <ResponseViewer
@@ -1263,6 +1322,7 @@
                 const lastResponse = ref(null);
                 const savedResponses = ref([]);
                 const authToken = ref(localStorage.getItem('api-docs-auth-token') || '');
+                const pathParams = ref({});
 
                 const groupedRoutes = computed(() => {
                     if (!apiData.value.routes) return {};
@@ -1301,6 +1361,7 @@
                     selectedRoute.value = JSON.parse(JSON.stringify(route));
                     requestBody.value = '{}';
                     lastResponse.value = null;
+                    pathParams.value = {};
                     loadSavedResponses();
                 };
 
@@ -1315,8 +1376,6 @@
                             'Content-Type': 'application/json',
                             'Accept': 'application/json',
                         });
-                        console.log('Sending request to:', selectedRoute.value);
-                        console.log('With body:', authToken.value);
 
                         // Add auth header if token is provided and route requires auth
                         if (authToken.value && selectedRoute.value.requires_auth) {
@@ -1326,11 +1385,19 @@
                         // Parse request body
                         let requestData = {};
                         let bodyToSend = undefined;
+                        let finalUri = selectedRoute.value.uri;
 
                         try {
                             if (requestBody.value && requestBody.value.trim()) {
                                 requestData = JSON.parse(requestBody.value);
                                 bodyToSend = JSON.stringify(requestData);
+                            }
+                            if(pathParams.value){
+                                // Replace path parameters in the URI for the request only
+                                Object.keys(pathParams.value).forEach(param => {
+                                    const value = encodeURIComponent(pathParams.value[param]);
+                                    finalUri = finalUri.replace(`{${param}}`, value);
+                                });
                             }
                         } catch (e) {
                             lastResponse.value = { error: 'Invalid JSON in request body', status: 400 };
@@ -1340,8 +1407,8 @@
 
                         // Build the URL with base path
                         const baseUrl = window.location.origin;
-                        const url = `${baseUrl}/${selectedRoute.value.uri.replace(/^\//, '')}`;
-
+                        const url = `${baseUrl}/${finalUri.replace(/^\//, '')}`;
+                        
                         // Build fetch options
                         const fetchOptions = {
                             method: selectedRoute.value.method,
@@ -1455,6 +1522,7 @@
                     lastResponse,
                     savedResponses,
                     authToken,
+                    pathParams,
                     groupedRoutes,
                     fetchApiData,
                     selectEndpoint,
@@ -1491,7 +1559,9 @@
                                 :last-response="lastResponse"
                                 :saved-responses="savedResponses"
                                 :sending="sending"
+                                :path-params="pathParams"
                                 @update:requestBody="requestBody = $event"
+                                @update:pathParams="pathParams = $event"
                                 @send-request="sendRequest"
                                 @save-response="saveCurrentResponse"
                                 @view-response="viewSavedResponse"
