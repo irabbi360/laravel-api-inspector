@@ -31,11 +31,34 @@ class JsonFileWriter
     }
 
     /**
+     * Get the base path for saving responses based on storage_path config
+     */
+    protected function getBasePath(string $subfolder = ''): string
+    {
+        $storagePath = config('api-inspector.storage_path', 'storage');
+        $responsePath = config('api-inspector.response_path', 'api-docs');
+        
+        if ($storagePath === 'local') {
+            // Save to public folder (root public)
+            $basePath = public_path($responsePath);
+        } else {
+            // Save to storage/public folder (default: 'storage')
+            $basePath = storage_path("public/{$responsePath}");
+        }
+        
+        if ($subfolder) {
+            $basePath = "{$basePath}/{$subfolder}";
+        }
+        
+        return $basePath;
+    }
+
+    /**
      * Save route documentation
      */
     public function saveRouteDocs(string $routeName, array $routeData): bool
     {
-        $basePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        $basePath = $this->getBasePath();
         $filename = str_replace('/', '_', $routeName) ?: 'route';
 
         return $this->save("$basePath/$filename.json", $routeData);
@@ -46,7 +69,7 @@ class JsonFileWriter
      */
     public function savePostmanCollection(array $collection): bool
     {
-        $basePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        $basePath = $this->getBasePath();
 
         return $this->save("$basePath/postman_collection.json", $collection);
     }
@@ -56,7 +79,7 @@ class JsonFileWriter
      */
     public function saveOpenApiSpec(array $spec): bool
     {
-        $basePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        $basePath = $this->getBasePath();
 
         return $this->save("$basePath/openapi.json", $spec);
     }
@@ -66,7 +89,7 @@ class JsonFileWriter
      */
     public function saveResponse(string $routePath, array $response): bool
     {
-        $basePath = config('api-inspector.response_path') ?? storage_path('api-docs/responses');
+        $basePath = $this->getBasePath('responses');
 
         // Convert route path to file path
         $filePath = str_replace(['/', '{', '}'], ['_', '', ''], $routePath);
@@ -91,7 +114,7 @@ class JsonFileWriter
      */
     public function clearAll(): bool
     {
-        $basePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        $basePath = $this->getBasePath();
 
         if ($this->filesystem->isDirectory($basePath)) {
             return $this->filesystem->deleteDirectory($basePath);

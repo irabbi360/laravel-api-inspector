@@ -363,8 +363,16 @@ class ApiDocumentationController extends Controller
      */
     private function saveResponseToJson(string $routeUri, string $routeMethod, array $responseData, string $timestamp): JsonResponse
     {
-        $responsePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        $responsePath = config('api-inspector.response_path');
+        $storagePath = config('api-inspector.storage_path', 'storage');
         $fileName = md5($routeMethod.':'.$routeUri).'.json';
+        if ($storagePath === 'local') {
+            // Save to public folder (root public)
+            $responsePath = public_path($responsePath);
+        } else {
+            // Save to storage/public folder (default: 'storage')
+            $responsePath = storage_path("app/public/{$responsePath}");
+        }
         $filePath = $responsePath.'/responses/'.$fileName;
 
         // Create directory if it doesn't exist
@@ -410,11 +418,21 @@ class ApiDocumentationController extends Controller
             }
 
             $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
             $responses = [];
 
             if ($driver === 'json') {
-                $responsePath = config('api-inspector.response_path') ?? storage_path('api-docs');
+                $responsePath = config('api-inspector.response_path');
                 $fileName = md5($routeMethod.':'.$routeUri).'.json';
+
+                if ($storagePath === 'local') {
+                    // Save to public folder (root public)
+                    $responsePath = public_path($responsePath);
+                } else {
+                    // Save to storage/public folder (default: 'storage')
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
                 $filePath = $responsePath.'/responses/'.$fileName;
 
                 if (file_exists($filePath)) {
@@ -624,6 +642,23 @@ class ApiDocumentationController extends Controller
      */
     private function formatFieldType($field, string $parentResourceClass, int $depth)
     {
+        // Handle nested resources detected by ResourceExtractor
+        if (isset($field['type']) && $field['type'] === 'nested_resource' && isset($field['resource_class'])) {
+            $nestedResourceClass = $field['resource_class'];
+            $resourceType = $field['resource_type'] ?? 'object'; // 'object' or 'collection'
+            
+            // Resolve the full namespace if not already fully qualified
+            $resolvedClass = $this->resolveResourceNamespace($nestedResourceClass, $parentResourceClass);
+            
+            // Recursively extract the nested resource schema
+            $nestedSchema = $this->extractResourceSchemaRecursively($resolvedClass, $depth + 1);
+            if ($nestedSchema) {
+                // Add resource type information
+                $nestedSchema['resource_type'] = $resourceType;
+                return $nestedSchema;
+            }
+        }
+
         // If it's a nested array/collection, check if it's a resource
         if (isset($field['nested']) && is_array($field['nested'])) {
             // Try to determine the nested resource class
@@ -665,5 +700,101 @@ class ApiDocumentationController extends Controller
         }
 
         return $formattedExample;
+    }
+
+    /**
+     * Resolve the full namespace of a nested resource class
+     */
+    private function resolveResourceNamespace(string $resourceClass, string $parentResourceClass): string
+    {
+        // If already fully qualified (starts with \ or has namespace), return as-is
+        if (strpos($resourceClass, '\\') === 0 || strpos($resourceClass, '\\') !== false) {
+            $fullyQualified = ltrim($resourceClass, '\\');
+            if (class_exists($fullyQualified)) {
+                return $fullyQualified;
+            }
+        }
+        
+        // Get the namespace from the parent resource class
+        $parentNamespace = '';
+        if (strpos($parentResourceClass, '\\') !== false) {
+            $parentNamespace = substr($parentResourceClass, 0, strrpos($parentResourceClass, '\\'));
+        }
+        
+        // Try to find the resource in the same namespace as parent
+        if ($parentNamespace) {
+            $candidateClass = $parentNamespace . '\\' . $resourceClass;
+            if (class_exists($candidateClass)) {
+                return $candidateClass;
+            }
+        }
+        
+        // Try common resource namespace patterns with multi-level folder support
+        $commonNamespaces = [
+            'App\\Http\\Resources',
+            'App\\Resources',
+        ];
+        
+        foreach ($commonNamespaces as $baseNamespace) {
+            // Try direct match: App\Http\Resources\ProfileResource
+            $candidateClass = $baseNamespace . '\\' . $resourceClass;
+            if (class_exists($candidateClass)) {
+                return $candidateClass;
+            }
+            
+            // Try searching in subdirectories recursively
+            $candidateClass = $this->searchInSubdirectories($baseNamespace, $resourceClass);
+            if ($candidateClass) {
+                return $candidateClass;
+            }
+        }
+        
+        // If all resolution attempts fail, return original class name
+        // ResourceExtractor::extract() will handle the error gracefully
+        return $resourceClass;
+    }
+
+    /**
+     * Search for a class in subdirectories of a base namespace
+     */
+    private function searchInSubdirectories(string $baseNamespace, string $className): ?string
+    {
+        // Convert namespace to directory path
+        $basePath = base_path(str_replace('\\', '/', str_replace('App\\', 'app/', $baseNamespace)));
+        
+        if (!is_dir($basePath)) {
+            return null;
+        }
+        
+        // Get all PHP files recursively
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($basePath, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        
+        foreach ($iterator as $file) {
+            if ($file->isFile() && $file->getExtension() === 'php') {
+                $filename = $file->getBasename('.php');
+                
+                // Check if filename matches the class name
+                if ($filename === $className) {
+                    // Build the namespace from the file path
+                    $relativePath = str_replace($basePath, '', $file->getPath());
+                    $subNamespace = str_replace('/', '\\', trim($relativePath, '/'));
+                    
+                    $candidateClass = $baseNamespace;
+                    if ($subNamespace) {
+                        $candidateClass .= '\\' . $subNamespace;
+                    }
+                    $candidateClass .= '\\' . $className;
+                    
+                    if (class_exists($candidateClass)) {
+                        return $candidateClass;
+                    }
+                }
+            }
+        }
+        
+        return null;
     }
 }
