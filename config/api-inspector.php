@@ -10,7 +10,7 @@ return [
     * localhost:8080/api-docs
     */
     'route_prefix' => 'api-docs',
-    
+
     /*
     |--------------------------------------------------------------------------
     | API Inspector Assets Path
