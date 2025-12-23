@@ -70,6 +70,14 @@ class ApiDocumentationController extends Controller
                         // Silent fail
                     }
 
+                    $responseSchema = null;
+                    try {
+                        // Extract response schema from Resource if it exists
+                        $responseSchema = $this->extractResponseSchema($route);
+                    } catch (\Exception $e) {
+                        // Silent fail
+                    }
+
                     $routes[] = [
                         'method' => strtoupper($method),
                         'uri' => $route->uri,
@@ -78,6 +86,7 @@ class ApiDocumentationController extends Controller
                         'requires_auth' => $this->requiresAuth($route),
                         'parameters' => $parameters,
                         'request_rules' => $requestRules,
+                        'response_schema' => $responseSchema,
                         'response_example' => ['success' => true, 'message' => 'Success'],
                     ];
                 }
@@ -440,6 +449,55 @@ class ApiDocumentationController extends Controller
             return response()->json($docs);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Extract response schema from Resource
+     */
+    private function extractResponseSchema($route): ?array
+    {
+        try {
+            $controllerName = $route->getActionName();
+            if (! $controllerName || $controllerName === 'Closure') {
+                return null;
+            }
+
+            // Parse controller@method format
+            if (! str_contains($controllerName, '@')) {
+                return null;
+            }
+
+            list($controller, $method) = explode('@', $controllerName);
+
+            if (! class_exists($controller)) {
+                return null;
+            }
+
+            $reflection = new \ReflectionClass($controller);
+            if (! $reflection->hasMethod($method)) {
+                return null;
+            }
+
+            $controllerMethod = $reflection->getMethod($method);
+            $returnType = $controllerMethod->getReturnType();
+
+            if (! $returnType) {
+                return null;
+            }
+
+            // Get the return type name safely
+            $returnTypeName = (string) $returnType;
+
+            // Check if it's an Illuminate\Http\Resources\Json\JsonResource
+            if (class_exists($returnTypeName) && is_subclass_of($returnTypeName, \Illuminate\Http\Resources\Json\JsonResource::class)) {
+                // Extract resource schema
+                return \Irabbi360\LaravelApiInspector\Extractors\ResourceExtractor::extract($returnTypeName);
+            }
+
+            return null;
+        } catch (\Exception $e) {
+            return null;
         }
     }
 }

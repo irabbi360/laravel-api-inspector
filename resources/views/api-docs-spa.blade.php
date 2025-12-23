@@ -1143,11 +1143,51 @@
             `,
         });
 
+        // Response Schema Component
+        const ResponseSchema = defineComponent({
+            name: 'ResponseSchema',
+            props: {
+                schema: Object,
+            },
+            data() {
+                return {
+                    showSchema: true,
+                };
+            },
+            template: `
+                <div v-if="schema && Object.keys(schema).length > 0" class="section">
+                    <div class="section-title">Response Schema</div>
+                    <div style="background: white; border: 1px solid #e0e0e0; border-radius: 4px; padding: 15px;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                            <thead style="background: #fafafa;">
+                                <tr>
+                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Field Name</th>
+                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Type</th>
+                                    <th style="text-align: left; padding: 12px; font-weight: 600; color: #666; border-bottom: 1px solid #e0e0e0;">Example</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="(field, fieldName) in schema" :key="fieldName">
+                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; font-weight: 600; color: #0066cc;">@{{ fieldName }}</span></td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0;"><span style="font-family: monospace; color: #666; background: #f5f5f5; padding: 2px 6px; border-radius: 3px;">@{{ field.type || 'string' }}</span></td>
+                                    <td style="padding: 12px; border-bottom: 1px solid #f0f0f0; font-family: monospace; font-size: 0.85em;">
+                                        <span v-if="field.format" style="color: #999;">(@{{ field.format }})</span>
+                                        @{{ field.example !== undefined ? field.example : '-' }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `,
+        });
+
         // Response Viewer Component
         const ResponseViewer = defineComponent({
             name: 'ResponseViewer',
             props: {
                 response: Object,
+                schema: Object,
             },
             emits: ['save-response'],
             data() {
@@ -1269,6 +1309,7 @@
                 ParametersSection,
                 RequestBodySection,
                 RequestTester,
+                ResponseSchema,
                 ResponseViewer,
                 SavedResponses,
             },
@@ -1291,8 +1332,10 @@
                                 @update:pathParams="$emit('update:pathParams', $event)"
                                 @send-request="$emit('send-request')"
                             />
+                            <ResponseSchema :schema="route?.response_schema" />
                             <ResponseViewer
                                 :response="lastResponse"
+                                :schema="route?.response_schema"
                                 @save-response="$emit('save-response')"
                             />
                             <SavedResponses
