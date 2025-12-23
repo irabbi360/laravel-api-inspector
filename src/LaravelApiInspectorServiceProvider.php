@@ -11,20 +11,28 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
-        /*
-         * This class is a Package Service Provider
-         *
-         * More info: https://github.com/spatie/laravel-package-tools
-         */
         $package
             ->name('laravel-api-inspector')
+
+            // config/api-inspector.php
             ->hasConfigFile()
+
+            // resources/views
             ->hasViews()
+
+            // database/migrations
             ->hasMigration('create_laravel_api_inspector_table')
-            ->hasRoutes(['web'])
+
+            // routes/web.php
+            ->hasRoutes(['web', 'api'])
+
+            // artisan commands
             ->hasCommands([
                 GenerateDocsCommand::class,
                 LaravelApiInspectorCommand::class,
-            ]);
+            ])
+
+            // 👇 THIS IS THE IMPORTANT PART
+            ->hasAssets();
     }
 }

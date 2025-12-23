@@ -17,7 +17,7 @@ class ApiInspectorController extends Controller
      */
     public function index()
     {
-        return view('api-inspector::api-docs', [
+        return view('api-inspector::index', [
             'lapiScriptVariables' => [
                 'title' => config('api-inspector.title', 'Laravel API Inspector'),
                 'version' => LaravelApiInspector::version(),

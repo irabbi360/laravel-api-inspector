@@ -10,6 +10,17 @@ return [
     * localhost:8080/api-docs
     */
     'route_prefix' => 'api-docs',
+    
+    /*
+    |--------------------------------------------------------------------------
+    | API Inspector Assets Path
+    |--------------------------------------------------------------------------
+    | The path to the API Inspector assets.
+    |
+    */
+
+    'assets_path' => 'vendor/api-inspector',
+
     'output' => [
         'openapi' => true,
         'postman' => true,
