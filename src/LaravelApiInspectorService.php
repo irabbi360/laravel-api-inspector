@@ -2,14 +2,13 @@
 
 namespace Irabbi360\LaravelApiInspector;
 
-use ReflectionClass;
-use ReflectionMethod;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use ReflectionClass;
+use ReflectionMethod;
 
 class LaravelApiInspectorService
 {
-
     /**
      * Extract route parameters from URI
      */
