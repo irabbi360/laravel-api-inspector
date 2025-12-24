@@ -25,4 +25,9 @@ class LaravelApiInspector
                 : 'dev-main';
         }
     }
+
+    public static function basePath(string $path): string
+    {
+        return __DIR__.'/..'.$path;
+    }
 }

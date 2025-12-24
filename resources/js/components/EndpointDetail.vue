@@ -4,7 +4,7 @@
     <div class="detail-body">
       <div class="detail-body-left">
         <ParametersSection :parameters="route.parameters" />
-        <RequestBodySection :request-rules="route.request_rules" />
+        <!-- <RequestBodySection :request-rules="route.request_rules" /> -->
         <RequestTester
           :request-body="requestBody"
           :request-rules="route.request_rules"
@@ -17,27 +17,44 @@
         />
       </div>
       <div class="detail-body-right">
-        <ResponseSchema :schema="route.response_schema" />
-        <ResponseViewer
-          v-if="lastResponse"
-          :response="lastResponse"
-          :schema="route.response_schema"
-          @save-response="$emit('save-response')"
-        />
-        <SavedResponses
-          :responses="savedResponses"
-          @view-response="$emit('view-response', $event)"
-        />
-        <div v-if="!lastResponse" class="empty-state">
-          <div class="empty-state-icon">📄</div>
-          <p>Send a request to see the response</p>
-        </div>
+        <Tabs
+          v-model="activeTab"
+          :tabs="['Request Body Parameters', 'Current Response', 'Response Schema', 'Saved Responses History']"
+        >
+          <template #default="{ activeTab }">
+            <div v-show="activeTab === 0" class="tab-content">
+              <RequestBodySection :request-rules="route.request_rules" />
+            </div>
+            <div v-show="activeTab === 1" class="tab-content">
+              <ResponseViewer
+                v-if="lastResponse"
+                :response="lastResponse"
+                :schema="route.response_schema"
+                @save-response="$emit('save-response')"
+              />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p>Send a request to see the response</p>
+              </div>
+            </div>
+            <div v-show="activeTab === 2" class="tab-content">
+              <ResponseSchema :schema="route.response_schema" />
+            </div>
+            <div v-show="activeTab === 3" class="tab-content">
+              <SavedResponses
+                :responses="savedResponses"
+                @view-response="$emit('view-response', $event)"
+              />
+            </div>
+          </template>
+        </Tabs>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
+import { ref, watch } from 'vue'
 import DetailHeader from './DetailHeader.vue'
 import ParametersSection from './ParametersSection.vue'
 import RequestBodySection from './RequestBodySection.vue'
@@ -45,8 +62,9 @@ import RequestTester from './RequestTester.vue'
 import ResponseSchema from './ResponseSchema.vue'
 import ResponseViewer from './ResponseViewer.vue'
 import SavedResponses from './SavedResponses.vue'
+import Tabs from './Tabs.vue'
 
-defineProps({
+const props = defineProps({
   route: {
     type: Object,
     required: true
@@ -74,6 +92,15 @@ defineProps({
 })
 
 defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams'])
+
+const activeTab = ref(0)
+
+// Watch for response changes and switch to Current Response tab
+watch(() => props.lastResponse, (newResponse) => {
+  if (newResponse) {
+    activeTab.value = 1
+  }
+})
 </script>
 
 <style scoped>
@@ -108,17 +135,31 @@ defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-respon
 }
 
 .empty-state {
-  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   color: #999;
+  padding: 40px 20px;
+  min-height: 200px;
 }
 
 .empty-state-icon {
   font-size: 4em;
   margin-bottom: 20px;
   opacity: 0.3;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 </style>

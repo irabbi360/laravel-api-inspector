@@ -33,12 +33,13 @@ class ApiInspectorController extends Controller
     /**
      * Fetch real-time API routes and documentation
      */
-    public function fetchApiInfo(): JsonResponse
+    public function fetchApiInfo(Request $request): JsonResponse
     {
         try {
             $routes = [];
             $requestRuleExtractor = new \Irabbi360\LaravelApiInspector\Extractors\RequestRuleExtractor;
             $uriPrefix = config('api-inspector.only_route_uri_start_with', '');
+            $groupBy = $request->query('groupBy', 'default'); // Get groupBy parameter from query
 
             // Extract all API routes from the router
             foreach (\Route::getRoutes()->getRoutes() as $route) {
@@ -101,14 +102,22 @@ class ApiInspectorController extends Controller
                         'request_rules' => $requestRules,
                         'response_schema' => $responseSchema,
                         'response_example' => ['success' => true, 'message' => 'Success'],
+                        ...$this->service->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
                     ];
                 }
             }
+
+            // Assign sequential group_index to each route (0, 1, 2, 3...)
+            foreach ($routes as $index => &$route) {
+                $route['group_index'] = $index;
+            }
+            unset($route);
 
             return response()->json([
                 'title' => config('api-inspector.title') ?? 'Laravel API Inspector',
                 'version' => LaravelApiInspector::version(),
                 'routes' => $routes,
+                'groupBy' => $groupBy,
             ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

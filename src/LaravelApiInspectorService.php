@@ -84,6 +84,110 @@ class LaravelApiInspectorService
     }
 
     /**
+     * Get group information for a route based on strategy
+     */
+    public function getRouteGroup(string $uri, string $controllerName = '', string $groupBy = 'default'): array
+    {
+        return match ($groupBy) {
+            'api_uri' => $this->groupByApiUri($uri),
+            'controller_full_path' => $this->groupByControllerPath($controllerName),
+            'default' => $this->groupByDefault($uri),
+            default => $this->groupByDefault($uri),
+        };
+    }
+
+    /**
+     * Group by default (first path segment)
+     */
+    private function groupByDefault(string $uri): array
+    {
+        $parts = explode('/', trim($uri, '/'));
+        $group = ! empty($parts[0]) ? $parts[0] : 'Other';
+
+        return [
+            'group' => $group,
+        ];
+    }
+
+    /**
+     * Group by API URI patterns from config
+     */
+    private function groupByApiUri(string $uri): array
+    {
+        $groupPatterns = config('api-inspector.group_by.uri_patterns', []);
+
+        if (empty($groupPatterns)) {
+            return $this->groupByDefault($uri);
+        }
+
+        foreach ($groupPatterns as $pattern) {
+            if (preg_match('#'.$pattern.'#', $uri, $matches)) {
+                // Get the matched base pattern
+                $baseGroup = ltrim(rtrim($matches[0], '/'), '/');
+
+                // Extract remaining path after the match
+                $remainingUri = substr($uri, strlen($matches[0]));
+                $remainingParts = array_filter(explode('/', trim($remainingUri, '/')));
+
+                // Add the next segment to the group if it exists
+                if (! empty($remainingParts)) {
+                    $nextSegment = reset($remainingParts);
+                    $group = $baseGroup.'/'.$nextSegment;
+                } else {
+                    $group = $baseGroup;
+                }
+
+                return [
+                    'group' => $group,
+                ];
+            }
+        }
+
+        // No pattern matched
+        return [
+            'group' => 'Other',
+        ];
+    }
+
+    /**
+     * Group by controller full class path
+     */
+    private function groupByControllerPath(string $controllerName): array
+    {
+        if (! $controllerName || $controllerName === 'Closure') {
+            return [
+                'group' => 'Closures',
+            ];
+        }
+
+        try {
+            // Parse controller@method format
+            if (! str_contains($controllerName, '@')) {
+                return [
+                    'group' => 'Other',
+                ];
+            }
+
+            [$controller, $method] = explode('@', $controllerName);
+
+            if (! class_exists($controller)) {
+                return [
+                    'group' => 'Other',
+                ];
+            }
+
+            // Return the full controller class path (with backslashes)
+            return [
+                'group' => $controller,
+            ];
+        } catch (\Exception $e) {
+            return [
+                'group' => 'Other',
+            ];
+        }
+    }
+
+    /**
      * Check if route should be skipped based on hide_matching config
      */
     public function shouldSkipRoute($route): bool
