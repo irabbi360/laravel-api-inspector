@@ -23,42 +23,21 @@
 composer require irabbi360/laravel-api-inspector
 ```
 
-Publish the config file:
+## Run the interactive installer
 
 ```bash
-php artisan vendor:publish --tag="api-inspector-config"
-```
-
-Publish the views file:
-
-```bash
-php artisan vendor:publish --tag="api-inspector-views"
+php artisan api-inspector:install
 ```
 
 ## Quick Start
 
-### 1. Generate Documentation
 
-Run the command to generate all documentation formats:
-
-```bash
-php artisan api-inspector:generate
-```
-
-Or generate a specific format:
-
-```bash
-php artisan api-inspector:generate --format=postman
-php artisan api-inspector:generate --format=openapi
-php artisan api-inspector:generate --format=html
-```
-
-### 2. View Documentation in Browser
+### View Documentation in Browser
 
 After generating documentation, visit:
 
 ```
-http://localhost:8000/api/docs
+http://localhost:8000/api-docs
 ```
 
 You'll see a beautiful HTML documentation page with all your API endpoints!
@@ -67,7 +46,7 @@ You can also access:
 - **Postman Collection**: `http://localhost:8000/api/docs/postman` (download)
 - **OpenAPI Spec**: `http://localhost:8000/api/docs/openapi` (download)
 
-### 3. Create a FormRequest with Validation Rules
+### Create a FormRequest with Validation Rules
 
 ```php
 <?php
@@ -90,7 +69,7 @@ class StoreUserRequest extends FormRequest
 }
 ```
 
-### 4. Use FormRequest in Your Controller
+### Use FormRequest in Your Controller
 
 ```php
 <?php
@@ -112,7 +91,7 @@ class UserController extends Controller
 }
 ```
 
-### 4. Auto Response Schema generate. You can now add the annotation to your controller methods:
+### Auto Response Schema generate. You can now add the annotation to your controller methods:
 
 ```php
 <?php

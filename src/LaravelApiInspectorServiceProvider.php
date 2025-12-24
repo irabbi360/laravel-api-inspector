@@ -2,10 +2,12 @@
 
 namespace Irabbi360\LaravelApiInspector;
 
-use Irabbi360\LaravelApiInspector\Commands\GenerateDocsCommand;
-use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
+use Irabbi360\LaravelApiInspector\Commands\PublishCommand;
+use Irabbi360\LaravelApiInspector\Commands\GenerateDocsCommand;
+use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 
 class LaravelApiInspectorServiceProvider extends PackageServiceProvider
 {
@@ -13,26 +15,29 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
     {
         $package
             ->name('laravel-api-inspector')
-
-            // config/api-inspector.php
             ->hasConfigFile()
-
-            // resources/views
             ->hasViews()
-
-            // database/migrations
-            ->hasMigration('create_laravel_api_inspector_table')
-
-            // routes/web.php
             ->hasRoutes(['web', 'api'])
-
+            ->hasAssets()
             // artisan commands
             ->hasCommands([
                 GenerateDocsCommand::class,
                 LaravelApiInspectorCommand::class,
             ])
-
-            // 👇 THIS IS THE IMPORTANT PART
-            ->hasAssets();
+            ->hasInstallCommand(function (InstallCommand $command): void {
+                $command
+                    ->startWith(function (InstallCommand $command): void {
+                        $command->info('Installing Laravel API Inspector...');
+                        $command->info('This package will help you generate auto API documentation.');
+                    })
+                    ->publishConfigFile()
+                    ->publishAssets()
+                    ->endWith(function (InstallCommand $command): void {
+                        $command->info('Laravel API Inspector has been installed successfully!');
+                        $command->info('You can now visit /api-docs to view your API documentation.');
+                        $command->info('Check the documentation for configuration options.');
+                    })
+                    ->askToStarRepoOnGitHub('irabbi360/laravel-api-inspector');
+            });
     }
 }
