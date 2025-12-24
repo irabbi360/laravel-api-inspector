@@ -10,6 +10,95 @@ use ReflectionMethod;
 class LaravelApiInspectorService
 {
     /**
+     * Get API routes and their documentation data
+     */
+    public function apiListData($request)
+    {
+        $routes = [];
+            $requestRuleExtractor = new \Irabbi360\LaravelApiInspector\Extractors\RequestRuleExtractor;
+            $uriPrefix = config('api-inspector.only_route_uri_start_with', '');
+            $groupBy = $request->query('groupBy', 'default'); // Get groupBy parameter from query
+
+            // Extract all API routes from the router
+            foreach (\Route::getRoutes()->getRoutes() as $route) {
+                // Skip documentation routes and internal routes
+                if ($this->shouldSkipRoute($route)) {
+                    continue;
+                }
+
+                // Filter by URI prefix if configured
+                if ($uriPrefix && ! \Illuminate\Support\Str::startsWith($route->uri, $uriPrefix)) {
+                    continue;
+                }
+
+                $methods = $route->methods;
+                $methods = array_filter($methods, fn ($m) => ! in_array($m, ['HEAD', 'OPTIONS']));
+
+                foreach ($methods as $method) {
+                    $requestRules = [];
+                    $parameters = [];
+                    $controllerName = '';
+
+                    try {
+                        // Extract request rules if there's a FormRequest
+                        $controllerName = $route->getActionName();
+                        if ($controllerName && $controllerName !== 'Closure') {
+                            $requestRules = $requestRuleExtractor->extract($controllerName);
+
+                            // If no rules found from FormRequest, try to extract from Request class parameter
+                            if (empty($requestRules)) {
+                                $requestRules = $this->generateExampleRequestRules($controllerName);
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        // Silent fail, FormRequest extraction is optional
+                        // This can happen with custom Rule objects or other extraction issues
+                    }
+
+                    try {
+                        // Extract parameters from route URI
+                        $parameters = $this->extractRouteParameters($route->uri);
+                    } catch (\Exception $e) {
+                        // Silent fail
+                    }
+
+                    $responseSchema = null;
+                    try {
+                        // Extract response schema from Resource if it exists
+                        $responseSchema = $this->extractResponseSchema($route);
+                    } catch (\Exception $e) {
+                        // Silent fail
+                    }
+
+                    $routes[] = [
+                        'http_method' => strtoupper($method),
+                        'uri' => $route->uri,
+                        'name' => $route->getName() ?? '',
+                        'description' => $this->getRouteDescription($route),
+                        'middleware' => $this->getRouteMiddleware($route),
+                        'controller' => $this->getRouteController($route),
+                        'method' => $this->getRouteControllerMethod($route),
+                        'requires_auth' => $this->requiresAuth($route),
+                        'parameters' => $parameters,
+                        'request_rules' => $requestRules,
+                        'response_schema' => $responseSchema,
+                        'response_example' => ['success' => true, 'message' => 'Success'],
+                        'responses' => config('api-inspector.default_responses', []),
+                        ...$this->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
+                    ];
+                }
+            }
+
+            // Assign sequential group_index to each route (0, 1, 2, 3...)
+            foreach ($routes as $index => &$route) {
+                $route['group_index'] = $index;
+            }
+            unset($route);
+
+            return [$routes, $groupBy];
+    }
+
+    /**
      * Extract route parameters from URI
      */
     public function extractRouteParameters(string $uri): array
@@ -409,6 +498,9 @@ class LaravelApiInspectorService
         }
     }
 
+    /**
+     * Extract resource class from DocBlock annotation
+     */
     private function extractResourceFromDocBlock(ReflectionMethod $method): ?string
     {
         $docComment = $method->getDocComment();
