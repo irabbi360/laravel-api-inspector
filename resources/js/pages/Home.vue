@@ -159,7 +159,7 @@ const sendRequest = async () => {
     const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
     
     const options = {
-      method: selectedRoute.value.method,
+      method: selectedRoute.value.http_method,
       headers: {
         'Content-Type': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
@@ -172,8 +172,8 @@ const sendRequest = async () => {
     }
 
     if (
-      selectedRoute.value.method !== 'GET' &&
-      selectedRoute.value.method !== 'HEAD'
+      selectedRoute.value.http_method !== 'GET' &&
+      selectedRoute.value.http_method !== 'HEAD'
     ) {
       options.body = requestBody.value
     }
@@ -220,7 +220,7 @@ const saveCurrentResponse = async () => {
         },
         body: JSON.stringify({
           route_uri: selectedRoute.value.uri,
-          route_method: selectedRoute.value.method,
+          route_method: selectedRoute.value.http_method,
           response: lastResponse.value.data,
           status: lastResponse.value.status
         })
@@ -240,7 +240,7 @@ const loadSavedResponses = async () => {
 
   try {
     const response = await fetch(
-      `${window.location.origin}/api/api-inspector-docs/get-saved-responses?uri=${encodeURIComponent(selectedRoute.value.uri)}&method=${selectedRoute.value.method}`,
+      `${window.location.origin}/api/api-inspector-docs/get-saved-responses?uri=${encodeURIComponent(selectedRoute.value.uri)}&method=${selectedRoute.value.http_method}`,
       {
         headers: {
           'X-Requested-With': 'XMLHttpRequest'

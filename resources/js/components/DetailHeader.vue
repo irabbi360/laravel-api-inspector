@@ -5,7 +5,7 @@
       <span v-if="route.requires_auth" class="auth-badge">Requires Auth</span>
     </div>
     <div class="detail-method-path">
-      <span :class="['detail-method-badge', route.method.toLowerCase()]">{{ route.method }}</span>
+      <span :class="['detail-method-badge', route.http_method.toLowerCase()]">{{ route.http_method }}</span>
       <span class="detail-path">{{ route.uri }}</span>
     </div>
   </div>

@@ -93,15 +93,19 @@ class ApiInspectorController extends Controller
                     }
 
                     $routes[] = [
-                        'method' => strtoupper($method),
+                        'http_method' => strtoupper($method),
                         'uri' => $route->uri,
                         'name' => $route->getName() ?? '',
                         'description' => $this->service->getRouteDescription($route),
+                        'middleware' => $this->service->getRouteMiddleware($route),
+                        'controller' => $this->service->getRouteController($route),
+                        'method' => $this->service->getRouteControllerMethod($route),
                         'requires_auth' => $this->service->requiresAuth($route),
                         'parameters' => $parameters,
                         'request_rules' => $requestRules,
                         'response_schema' => $responseSchema,
                         'response_example' => ['success' => true, 'message' => 'Success'],
+                        'responses' => config('api-inspector.default_responses', []),
                         ...$this->service->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
                     ];
                 }

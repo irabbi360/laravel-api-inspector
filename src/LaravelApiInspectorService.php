@@ -226,6 +226,48 @@ class LaravelApiInspectorService
     }
 
     /**
+     * Get route middlewares
+     */
+    public function getRouteMiddleware($route)
+    {
+        // Try to get from route action
+        if ($route->action && isset($route->action['middleware'])) {
+            return $route->action['middleware'];
+        }
+    }
+
+    /**
+     * Get route controller base class name
+     */
+    public function getRouteController($route): string
+    {
+        // Try to get from route action
+        if ($route->action && isset($route->action['controller'])) {
+            $action = $route->action['controller'];
+            [$controller, $method] = explode('@', $action);
+            $controllerName = class_basename($controller);
+            return $controllerName;
+        }
+
+        return ucfirst(str_replace('_', ' ', last(explode('/', $route->uri))));
+    }
+
+    /**
+     * Get route controller method name
+     */
+    public function getRouteControllerMethod($route): string
+    {
+        // Try to get from route action
+        if ($route->action && isset($route->action['controller'])) {
+            $action = $route->action['controller'];
+            [$controller, $method] = explode('@', $action);
+            return $method;
+        }
+
+        return ucfirst(str_replace('_', ' ', last(explode('/', $route->uri))));
+    }
+
+    /**
      * Check if route requires authentication
      */
     public function requiresAuth($route): bool
