@@ -122,7 +122,7 @@ watch(() => props.lastResponse, (newResponse) => {
 .detail-body-left {
   flex: 1;
   overflow-y: auto;
-  padding: 30px;
+  padding: 10px 20px;
   border-right: 1px solid #e0e0e0;
   background: #fff;
 }
@@ -130,7 +130,7 @@ watch(() => props.lastResponse, (newResponse) => {
 .detail-body-right {
   flex: 1;
   overflow-y: auto;
-  padding: 30px;
+  padding: 10px 20px;
   background: #f9f9f9;
 }
 

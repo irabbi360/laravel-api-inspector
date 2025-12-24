@@ -207,6 +207,12 @@ tr:hover {
 .fs-small {
     font-size: 0.875em;
 }
+.fs-20 {
+    font-size: 20px;
+}
+.font-bold {
+    font-weight: 700;
+}
 .justify-between{
     justify-content: space-between;
 }
