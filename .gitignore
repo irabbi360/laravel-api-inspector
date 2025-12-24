@@ -30,3 +30,14 @@ phpstan.neon
 testbench.yaml
 /docs
 /coverage
+.DS_Store
+.env
+.env.backup
+.env.local
+.env.*.local
+Homestead.yaml
+Homestead.json
+/.vagrant
+node_modules/
+package-lock.json
+yarn.lock
