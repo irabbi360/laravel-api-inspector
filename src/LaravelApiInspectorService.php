@@ -85,16 +85,24 @@ class LaravelApiInspectorService
     }
 
     /**
-     * Check if route should be skipped
+     * Check if route should be skipped based on hide_matching config
      */
     public function shouldSkipRoute($route): bool
     {
         $uri = $route->uri;
-        $skipped = ['api/docs', 'api/test-request', 'api/save-response', 'api/saved-responses', 'sanctum'];
+        $hidePatterns = config('api-inspector.hide_matching', []);
 
-        foreach ($skipped as $skip) {
-            if (str_contains($uri, $skip)) {
-                return true;
+        foreach ($hidePatterns as $pattern) {
+            // Check if pattern is a regex (starts and ends with #)
+            if (preg_match('/^#.*#$/', $pattern)) {
+                if (preg_match($pattern, $uri)) {
+                    return true;
+                }
+            } else {
+                // Plain string matching
+                if (str_contains($uri, $pattern)) {
+                    return true;
+                }
             }
         }
 
