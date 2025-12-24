@@ -121,18 +121,18 @@ class LaravelApiInspectorService
         }
 
         foreach ($groupPatterns as $pattern) {
-            if (preg_match('#' . $pattern . '#', $uri, $matches)) {
+            if (preg_match('#'.$pattern.'#', $uri, $matches)) {
                 // Get the matched base pattern
                 $baseGroup = ltrim(rtrim($matches[0], '/'), '/');
-                
+
                 // Extract remaining path after the match
                 $remainingUri = substr($uri, strlen($matches[0]));
                 $remainingParts = array_filter(explode('/', trim($remainingUri, '/')));
-                
+
                 // Add the next segment to the group if it exists
                 if (! empty($remainingParts)) {
                     $nextSegment = reset($remainingParts);
-                    $group = $baseGroup . '/' . $nextSegment;
+                    $group = $baseGroup.'/'.$nextSegment;
                 } else {
                     $group = $baseGroup;
                 }
