@@ -127,8 +127,17 @@ const selectEndpoint = (route) => {
     requestBody.value = '{}'
   }
   
+  // Initialize pathParams from route parameters
+  if (route.parameters && Object.keys(route.parameters).length > 0) {
+    pathParams.value = {}
+    Object.keys(route.parameters).forEach((param) => {
+      pathParams.value[param] = ''
+    })
+  } else {
+    pathParams.value = {}
+  }
+  
   lastResponse.value = null
-  pathParams.value = {}
   loadSavedResponses()
 }
 
@@ -137,19 +146,19 @@ const sendRequest = async () => {
 
   try {
     sending.value = true
-    const url = new URL(
-      `${window.location.origin}/${selectedRoute.value.uri}`
-    )
-
-    // Replace path parameters
-    let urlString = url.toString()
+    
+    // Build URL with path parameters replaced
+    let urlString = selectedRoute.value.uri
     Object.keys(pathParams.value).forEach((param) => {
       urlString = urlString.replace(
         `{${param}}`,
         pathParams.value[param]
       )
     })
-
+    
+    // Create full URL
+    const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
+    
     const options = {
       method: selectedRoute.value.method,
       headers: {
@@ -170,7 +179,7 @@ const sendRequest = async () => {
       options.body = requestBody.value
     }
 
-    const response = await fetch(urlString, options)
+    const response = await fetch(fullUrl, options)
     const contentType = response.headers.get('content-type')
 
     let data = ''

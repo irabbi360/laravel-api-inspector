@@ -17,7 +17,7 @@
         </div>
       </div>
 
-      <div class="tester-tabs">
+      <div v-if="hasRequestRules" class="tester-tabs">
         <button
           :class="['tab-btn', { active: useJsonEditor }]"
           @click="useJsonEditor = true"
@@ -33,7 +33,7 @@
         </button>
       </div>
 
-      <div v-if="useJsonEditor" class="json-editor-container">
+      <div v-if="useJsonEditor && hasRequestRules" class="json-editor-container">
         <label><strong>Request Body (JSON)</strong></label>
         <textarea
           v-model="jsonBody"
@@ -45,25 +45,30 @@
       </div>
 
       <div v-else class="form-fields-container">
-        <div v-for="(field, name) in requestRules" :key="name" class="form-field-group">
-          <div class="field-label">
-            <span class="field-name">{{ name }}</span>
-            <span v-if="field.required" class="field-required">REQUIRED</span>
-            <span v-else class="field-optional">(optional)</span>
+        <div v-for="(field, name) in requestRules" :key="name" class="form-field-group mb-0">
+          <div class="field-label justify-between">
+            <div>
+              <span class="field-name me-2">{{ name }}</span>
+              <span v-if="field.required" class="field-required">REQUIRED</span>
+              <span v-else class="field-optional">(optional)</span>
+            </div>
+            <div>
+              <span v-if="field.type" class="field-type">Type: {{ field.type }}</span>
+            </div>
           </div>
-          <div class="field-meta-info">
-            <span v-if="field.type" class="field-type">Type: {{ field.type }}</span>
-            <span v-if="field.description" class="field-description">
+          <div class="field-meta-info flex">
+            <div v-if="field.description" class="field-description">
               {{ field.description }}
-            </span>
+            </div>
+            <input
+              v-model="formData[name]"
+              :type="getInputType(name)"
+              :placeholder="`Enter ${name}`"
+              class="field-input"
+              @input="updateRequestBody"
+            />
           </div>
-          <input
-            v-model="formData[name]"
-            :type="getInputType(name)"
-            :placeholder="`Enter ${name}`"
-            class="field-input"
-            @input="updateRequestBody"
-          />
+  
         </div>
       </div>
 

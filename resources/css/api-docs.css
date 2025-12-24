@@ -207,3 +207,18 @@ tr:hover {
 .fs-small {
     font-size: 0.875em;
 }
+.justify-between{
+    justify-content: space-between;
+}
+.flex{
+    display: flex;
+}
+.ml-3 {
+    margin-left: 12px;
+}
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+.me-2 {
+    margin-right: 8px;
+}
