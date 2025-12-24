@@ -19,7 +19,7 @@
       <div class="detail-body-right">
         <Tabs
           v-model="activeTab"
-          :tabs="['Request Body Parameters', 'Current Response', 'Response Schema', 'Saved Responses History']"
+          :tabs="['Request Body', 'Response', 'Response Schema', 'Saved Response History', 'Info']"
         >
           <template #default="{ activeTab }">
             <div v-show="activeTab === 0" class="tab-content">
@@ -46,6 +46,9 @@
                 @view-response="$emit('view-response', $event)"
               />
             </div>
+            <div v-show="activeTab === 4" class="tab-content">
+                <ApiInfo :api-info="route" />
+              </div>
           </template>
         </Tabs>
       </div>
@@ -63,6 +66,7 @@ import ResponseSchema from './ResponseSchema.vue'
 import ResponseViewer from './ResponseViewer.vue'
 import SavedResponses from './SavedResponses.vue'
 import Tabs from './Tabs.vue'
+import ApiInfo from './ApiInfo.vue'
 
 const props = defineProps({
   route: {

@@ -77,6 +77,7 @@ class LaravelApiInspectorService
                     'description' => $this->getRouteDescription($route),
                     'middleware' => $this->getRouteMiddleware($route),
                     'controller' => $this->getRouteController($route),
+                    'controller_full_path' => $this->getRouteControllerFullPath($route),
                     'method' => $this->getRouteControllerMethod($route),
                     'requires_auth' => $this->requiresAuth($route),
                     'parameters' => $parameters,
@@ -333,7 +334,8 @@ class LaravelApiInspectorService
         // Try to get from route action
         if ($route->action && isset($route->action['controller'])) {
             $action = $route->action['controller'];
-            [$controller, $method] = explode('@', $action);
+
+            [$controller] = explode('@', $action);
             $controllerName = class_basename($controller);
 
             return $controllerName;
@@ -345,14 +347,27 @@ class LaravelApiInspectorService
     /**
      * Get route controller method name
      */
+    public function getRouteControllerFullPath($route): string
+    {
+        // Try to get from route action
+        if ($route->action && isset($route->action['controller'])) {
+            $action = $route->action['controller'];
+            [$method] = explode('@', $action);
+
+            return $method;
+        }
+
+        return ucfirst(str_replace('_', ' ', last(explode('/', $route->uri))));
+    }
+
     public function getRouteControllerMethod($route): string
     {
         // Try to get from route action
         if ($route->action && isset($route->action['controller'])) {
             $action = $route->action['controller'];
-            [$controller, $method] = explode('@', $action);
+            $parts = explode('@', $action);
 
-            return $method;
+            return $parts[1] ?? '';
         }
 
         return ucfirst(str_replace('_', ' ', last(explode('/', $route->uri))));
