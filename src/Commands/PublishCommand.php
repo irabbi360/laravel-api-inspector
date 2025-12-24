@@ -2,10 +2,10 @@
 
 namespace Irabbi360\LaravelApiInspector\Commands;
 
-use Spatie\Watcher\Watch;
-use Illuminate\Support\Str;
 use Illuminate\Console\Command;
+use Illuminate\Support\Str;
 use Irabbi360\LaravelApiInspector\Facades\LaravelApiInspector;
+use Spatie\Watcher\Watch;
 
 class PublishCommand extends Command
 {
