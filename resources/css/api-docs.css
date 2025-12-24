@@ -198,3 +198,12 @@ td {
 tr:hover {
     background: #fafafa;
 }
+.text-center {
+    text-align: center;
+}
+.mb-4 {
+    margin-bottom: 16px;
+}
+.fs-small {
+    font-size: 0.875em;
+}

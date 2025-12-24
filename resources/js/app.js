@@ -4,7 +4,6 @@ import Home from './pages/Home.vue';
 import '../css/api-docs.css'
 import { createRouter, createWebHistory } from 'vue-router';
 
-
 window.ApiInspector.basePath = '/' + window.ApiInspector.path;
 
 if (! window.location.pathname.startsWith(window.ApiInspector.basePath)) {

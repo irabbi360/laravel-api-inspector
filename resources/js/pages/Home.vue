@@ -30,11 +30,11 @@
         />
         <div v-else class="empty-state">
           <div class="empty-state-icon">🚀</div>
-          <div >
-            <h6>Welcome to {{ apiData.title }}</h6>
-            <p><strong>Laravel API Inspector</strong> automatically generates API documentation from your Laravel routes,</p>
-            <p> FormRequest validation rules, and API Resources. It's like Postman + Swagger combined, but deeply integrated with Laravel.</p>
-            <p>Version: {{ apiData.version }}</p>
+          <div class="text-center mb-4">
+            <h4>Welcome to {{ apiData.title }}</h4>
+            <p class="fs-small"><strong>Laravel API Inspector</strong> automatically generates API documentation from your Laravel routes,</p>
+            <p class="fs-small"> FormRequest validation rules, and API Resources. It's like Postman + Swagger combined, but deeply integrated with Laravel.</p>
+            <p class="fs-small">Version: {{ apiData.version }}</p>
           </div>
           <p>Select an endpoint from the sidebar to get started</p>
         </div>
