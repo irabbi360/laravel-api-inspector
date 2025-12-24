@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 
 Route::middleware('api')->prefix('api')->group(function () {
-    Route::get('api-inspector-docs/fetch', [ApiInspectorController::class, 'fetchApiInfo'])->name('api-inspector.docs.fetch');
+    Route::get('api-inspector-docs', [ApiInspectorController::class, 'fetchApiInfo'])->name('api-inspector.docs.fetch');
     Route::get('api-inspector-docs/postman', [ApiInspectorController::class, 'postman'])->name('api-inspector.docs.postman');
     Route::get('api-inspector-docs/openapi', [ApiInspectorController::class, 'openapi'])->name('api-inspector.docs.openapi');
     Route::get('api-inspector-docs/realtime', [ApiInspectorController::class, 'realtimeDocs'])->name('api-inspector.docs.realtime');

@@ -67,13 +67,12 @@ const groupedRoutes = computed(() => {
     if (!apiData.value.routes) return {};
 
     return apiData.value.routes.reduce((groups, route) => {
-        const parts = route.uri.split('/').filter(p => p);
-        const prefix = parts.length > 0 ? `/${parts[0]}` : 'Other';
+        const group = route.group || 'Other';
 
-        if (!groups[prefix]) {
-            groups[prefix] = [];
+        if (!groups[group]) {
+            groups[group] = [];
         }
-        groups[prefix].push(route);
+        groups[group].push(route);
         return groups;
     }, {});
 });
@@ -82,7 +81,7 @@ const fetchApiData = async () => {
   try {
     loading.value = true
     const response = await fetch(
-      `${window.location.origin}/api/api-inspector-docs/fetch`,
+      `${window.location.origin}/api/api-inspector-docs?groupBy=api_uri`,
       {
         headers: {
           'X-Requested-With': 'XMLHttpRequest',
