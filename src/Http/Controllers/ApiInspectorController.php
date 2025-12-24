@@ -2,12 +2,12 @@
 
 namespace Irabbi360\LaravelApiInspector\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
-use Irabbi360\LaravelApiInspector\LaravelApiInspectorService;
 use Irabbi360\LaravelApiInspector\Facades\LaravelApiInspector;
+use Irabbi360\LaravelApiInspector\LaravelApiInspectorService;
 
 class ApiInspectorController extends Controller
 {
