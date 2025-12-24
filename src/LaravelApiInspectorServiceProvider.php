@@ -5,7 +5,6 @@ namespace Irabbi360\LaravelApiInspector;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
-use Irabbi360\LaravelApiInspector\Commands\PublishCommand;
 use Irabbi360\LaravelApiInspector\Commands\GenerateDocsCommand;
 use Irabbi360\LaravelApiInspector\Commands\LaravelApiInspectorCommand;
 
