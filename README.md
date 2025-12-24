@@ -19,6 +19,15 @@
 
 ## Installation
 
+## Requirements
+
+- **PHP:** 8.1 or higher
+- **Laravel:** 10.0 or higher
+- **Database:** MySQL 5.7+ / PostgreSQL 10+ / SQLite 3.8+
+
+
+Get up and running in just two commands:
+
 ```bash
 composer require irabbi360/laravel-api-inspector
 ```
