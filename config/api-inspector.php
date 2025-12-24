@@ -67,5 +67,5 @@ return [
     /*
     * Can be used to define default response status codes to be shown in the docs
     */
-    'default_responses' => [ "200", "400", "401", "403", "404", "405", "422", "429", "500", "503"],
+    'default_responses' => ['200', '400', '401', '403', '404', '405', '422', '429', '500', '503'],
 ];

@@ -246,6 +246,7 @@ class LaravelApiInspectorService
             $action = $route->action['controller'];
             [$controller, $method] = explode('@', $action);
             $controllerName = class_basename($controller);
+
             return $controllerName;
         }
 
@@ -261,6 +262,7 @@ class LaravelApiInspectorService
         if ($route->action && isset($route->action['controller'])) {
             $action = $route->action['controller'];
             [$controller, $method] = explode('@', $action);
+
             return $method;
         }
 
