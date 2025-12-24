@@ -61,6 +61,6 @@ return [
         'uri_patterns' => [
             '^api/v[\d]+/', // `/api/v1/users/store` group as `/api/v1/users`.
             '^api/',        // `/api/users/store` group as `/api/users`.
-        ]
+        ],
     ],
 ];
