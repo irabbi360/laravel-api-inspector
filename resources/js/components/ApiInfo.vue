@@ -33,30 +33,176 @@
       <div class="info-group">
         <div class="info-label">Status Codes</div>
         <div class="info-link">
-          Show Response codes for this request <span class="arrow">›</span>
           <div>
-            <ul>
-              <li v-for="code in apiInfo.status_codes || []" :key="code">{{ code }}</li>
-            </ul>
+            <span :class="['arrow', { expanded: expandedSections.statusCodes }]">›</span>
+            <span @click="toggleSection('statusCodes')">{{ expandedSections.statusCodes ? 'Hide' : 'Show' }} Response codes for this request</span>
+            <div v-show="expandedSections.statusCodes" class="collapsible-content">
+              <div class="response-codes-list">
+                <div v-for="code in apiInfo.responses || []" :key="code" :class="['response', `response-${code}`]">
+                  - {{ code }} &nbsp; {{ getStatusText(code) }}
+                </div>
+              </div>
+              <div v-if="!apiInfo.responses || apiInfo.responses.length === 0" class="empty-content">
+                No response codes defined
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div class="info-group">
-        <div class="info-label"><code>&lt;/&gt; Curl</code></div>
-        <div class="info-link">Show curl command <span class="arrow">›</span></div>
+        <div class="info-label">Curl</div>
+        <div class="info-link">
+          <div>
+            <span :class="['arrow', { expanded: expandedSections.curl }]">›</span>
+            <span @click="toggleSection('curl')">{{ expandedSections.curl ? 'Hide' : 'Show' }} curl command</span>
+            <div v-show="expandedSections.curl" class="collapsible-content">
+              <div class="curl-command">
+                <div>
+                  <textarea readonly rows="6">{{ generateCurlCommand }}</textarea>
+                </div>
+                <button class="copy-btn" @click="copyToClipboard(generateCurlCommand)">Copy</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { ref, computed } from 'vue'
+
+const props = defineProps({
   apiInfo: {
     type: Object,
     default: null
   },
+  requestRules: {
+    type: Object,
+    default: null
+  }
 })
+
+const expandedSections = ref({
+  statusCodes: false,
+  curl: false
+})
+
+const toggleSection = (section) => {
+  expandedSections.value[section] = !expandedSections.value[section]
+}
+
+const generateCurlCommand = computed(() => {
+  if (!props.apiInfo) return ''
+  
+  const method = props.apiInfo.http_method || 'GET'
+  const uri = props.apiInfo.uri || '/'
+  const baseUrl = window.location.origin
+  const fullUrl = `${baseUrl}${uri}`
+  
+  let curl = `curl \\\n -X ${method} \\\n`
+  
+  // Add headers
+  curl += ` -H "Content-Type: application/json" \\\n`
+  curl += ` -H "Accept: application/json" \\\n`
+  
+  // Add URL
+  curl += ` ${fullUrl}`
+  
+  // Add request body for methods that typically have a body
+  const methodsWithBody = ['POST', 'PUT', 'PATCH']
+  if (methodsWithBody.includes(method.toUpperCase())) {
+    curl += ` \\\n -d '{\n`
+    
+    // Generate sample request body from request rules if available
+    if (props.requestRules && Object.keys(props.requestRules).length > 0) {
+      const fields = Object.keys(props.requestRules)
+      fields.forEach((field, index) => {
+        curl += `  "${field}": ""`
+        if (index < fields.length - 1) {
+          curl += `,\n`
+        } else {
+          curl += `\n`
+        }
+      })
+    }
+    
+    curl += `}'`
+  } else {
+    // For GET and other methods, just add a newline at the end
+    curl += ` \\\n`
+  }
+  
+  return curl
+})
+
+const copyToClipboard = (curlCode) => {
+  // Try modern Clipboard API first
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(curlCode).then(() => {
+      alert('Curl command copied to clipboard!')
+    }).catch((err) => {
+      console.error('Clipboard API error:', err)
+      fallbackCopyToClipboard(curlCode)
+    })
+  } else {
+    // Fallback for older browsers or non-secure contexts
+    fallbackCopyToClipboard(curlCode)
+  }
+}
+
+const statusCodeMap = {
+  200: 'OK',
+  201: 'Created',
+  204: 'No Content',
+  400: 'Bad Request',
+  401: 'Unauthorized',
+  403: 'Forbidden',
+  404: 'Not Found',
+  405: 'Method Not Allowed',
+  409: 'Conflict',
+  422: 'Unprocessable Entity',
+  429: 'Too Many Requests',
+  500: 'Internal Server Error',
+  502: 'Bad Gateway',
+  503: 'Service Unavailable'
+}
+
+const getStatusText = (code) => {
+  return statusCodeMap[code] || 'Unknown Status'
+}
+
+const fallbackCopyToClipboard = (text) => {
+  try {
+    // Create a temporary textarea element
+    const textarea = document.createElement('textarea')
+    textarea.value = text
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    textarea.style.pointerEvents = 'none'
+    document.body.appendChild(textarea)
+    
+    // Select and copy the text
+    textarea.select()
+    textarea.setSelectionRange(0, 99999) // For mobile devices
+    
+    const successful = document.execCommand('copy')
+    
+    if (successful) {
+      alert('Curl command copied to clipboard!')
+    } else {
+      alert('Failed to copy curl command')
+    }
+    
+    // Remove the temporary element
+    document.body.removeChild(textarea)
+  } catch (err) {
+    console.error('Fallback copy error:', err)
+    alert('Could not copy curl command. Please try again.')
+  }
+}
 </script>
 
 <style scoped>
@@ -167,6 +313,144 @@ defineProps({
 .arrow {
   font-size: 18px;
   font-weight: 300;
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.arrow.expanded {
+  transform: rotate(90deg);
+}
+
+.collapsible-content {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border-left: 3px solid #2563eb;
+  border-radius: 4px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.response-codes-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.response {
+  padding: 10px 16px;
+  background: #fff;
+  border: none;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  width: 100%;
+  display: inline-block;
+}
+
+/* Success responses */
+.response-200, .response-201, .response-204 {
+  background: #10b981;
+  color: #fff;
+}
+
+/* Client errors - 400s */
+.response-400, .response-401, .response-403, .response-404, .response-405, .response-409 {
+  background: #f87171;
+  color: #fff;
+}
+
+/* Client errors - 422, 429 (validation/rate limit) */
+.response-422, .response-429 {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+/* Server errors */
+.response-500, .response-502, .response-503 {
+  background: #f87171;
+  color: #fff;
+}
+
+.curl-command {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.curl-command > div {
+  width: 100%;
+}
+
+.curl-command textarea {
+  width: 100%;
+  background: #1f2937;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #374151;
+  font-size: 12px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  color: #e5e7eb;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.curl-command code {
+  flex: 1;
+  background: #fff;
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid #e5e7eb;
+  font-size: 12px;
+  overflow-x: auto;
+  white-space: nowrap;
+  color: #374151;
+}
+
+.copy-btn {
+  align-self: center;
+  width: 120px;
+  padding: 8px 16px;
+  background: #d1d5db;
+  color: #374151;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.copy-btn:hover {
+  background: #bfdbfe;
+}
+
+.copy-btn:active {
+  background: #93c5fd;
+}
+
+.empty-content {
+  padding: 12px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
 }
 
 /* Request Parameters Section */

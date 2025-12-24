@@ -136,7 +136,6 @@ textarea, input, select {
     border-radius: 4px;
     font-family: 'Courier New', monospace;
     font-size: 0.9em;
-    resize: vertical;
 }
 
 textarea:focus, input:focus, select:focus {
