@@ -11,8 +11,6 @@
         "api-tester"
     ],
     "homepage": "https://github.com/irabbi360/laravel-api-inspector",
-    "type": "library",
-    "version": "1.0.0",
     "license": "MIT",
     "authors": [
         {
