@@ -1,4 +1,10 @@
 <template>
+  <Toast
+      :message="toastMessage"
+      :type="toastType"
+      :visible="toastVisible"
+      @close="toastVisible = false"
+    />
   <div class="api-info-container">
     <!-- Route Information Section -->
     <div v-if="apiInfo" class="info-section">
@@ -73,6 +79,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import Toast from '../components/Toast.vue'
 
 const props = defineProps({
   apiInfo: {
@@ -84,6 +91,10 @@ const props = defineProps({
     default: null
   }
 })
+
+const toastVisible = ref(false)
+const toastMessage = ref('')
+const toastType = ref('success')
 
 const expandedSections = ref({
   statusCodes: false,
@@ -142,8 +153,13 @@ const copyToClipboard = (curlCode) => {
   // Try modern Clipboard API first
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(curlCode).then(() => {
-      alert('Curl command copied to clipboard!')
+      toastMessage.value = 'Curl command copied to clipboard!'
+      toastType.value = 'success'
+      toastVisible.value = true
     }).catch((err) => {
+      toastMessage.value = 'Failed to copy curl command'
+      toastType.value = 'error'
+      toastVisible.value = true
       console.error('Clipboard API error:', err)
       fallbackCopyToClipboard(curlCode)
     })
@@ -191,16 +207,23 @@ const fallbackCopyToClipboard = (text) => {
     const successful = document.execCommand('copy')
     
     if (successful) {
-      alert('Curl command copied to clipboard!')
+      toastMessage.value = 'Curl command copied to clipboard!'
+      toastType.value = 'success'
+      toastVisible.value = true
     } else {
-      alert('Failed to copy curl command')
+      toastMessage.value = 'Failed to copy curl command'
+      toastType.value = 'error'
+      toastVisible.value = true
     }
     
     // Remove the temporary element
     document.body.removeChild(textarea)
   } catch (err) {
     console.error('Fallback copy error:', err)
-    alert('Could not copy curl command. Please try again.')
+    
+    toastMessage.value = 'Could not copy curl command. Please try again.'
+    toastType.value = 'error'
+    toastVisible.value = true
   }
 }
 </script>

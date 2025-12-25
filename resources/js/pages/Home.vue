@@ -1,5 +1,11 @@
 <template>
   <div class="app-container">
+    <Toast
+      :message="toastMessage"
+      :type="toastType"
+      :visible="toastVisible"
+      @close="toastVisible = false"
+    />
     <Topbar
       :api-data="apiData"
       :loading="loading"
@@ -48,6 +54,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import Topbar from '../components/Topbar.vue'
 import Sidebar from '../components/Sidebar.vue'
 import EndpointDetail from '../components/EndpointDetail.vue'
+import Toast from '../components/Toast.vue'
 
 const loading = ref(true)
 const sending = ref(false)
@@ -62,6 +69,9 @@ const lastResponse = ref(null)
 const savedResponses = ref([])
 const authToken = ref(localStorage.getItem('api-docs-auth-token') || '')
 const pathParams = ref({})
+const toastVisible = ref(false)
+const toastMessage = ref('')
+const toastType = ref('success')
 
 const groupedRoutes = computed(() => {
     if (!apiData.value.routes) return {};
@@ -229,9 +239,19 @@ const saveCurrentResponse = async () => {
 
     if (response.ok) {
       loadSavedResponses()
+      toastMessage.value = 'Response saved successfully!'
+      toastType.value = 'success'
+      toastVisible.value = true
+    } else {
+      toastMessage.value = 'Failed to save response'
+      toastType.value = 'error'
+      toastVisible.value = true
     }
   } catch (error) {
     console.error('Error saving response:', error)
+    toastMessage.value = 'Error saving response'
+    toastType.value = 'error'
+    toastVisible.value = true
   }
 }
 
