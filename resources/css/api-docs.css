@@ -198,7 +198,7 @@ tr:hover {
     background: #fafafa;
 }
 .text-center {
-    text-align: center;
+    text-align: center !important;
 }
 .mb-4 {
     margin-bottom: 16px;

@@ -7,6 +7,7 @@
       </div>
       <div class="response-code">{{ formatResponse(response.data) }}</div>
       <button
+        v-if="!response?.is_saved"
         class="btn"
         style="margin-top: 15px"
         @click="$emit('save-response')"

@@ -29,9 +29,10 @@
               />
               <div v-else class="empty-state">
                 <div class="empty-state-icon">📄</div>
-                <p v-if="route.http_method !== 'GET'">
-                  Request body not available! Please use the request rules for expected payload.
-                </p>
+                <template v-if="route.http_method !== 'GET' && route.http_method !== 'DELETE'">
+                  <p>Request body not available!</p>
+                  <p>Please use the request rules for expected payload.</p>
+                </template>
                 <p v-if="route.http_method === 'GET'">
                   This endpoint does not accept a request body.
                 </p>
@@ -72,7 +73,8 @@
                 />
               <div v-else class="empty-state">
                 <div class="empty-state-icon">📄</div>
-                <p>Response schema not available!</p>
+                <p class="text-center">Response schema not available!</p>
+                <p class="text-center">Please use the resource class to define the response schema.</p>
               </div>
             </div>
             

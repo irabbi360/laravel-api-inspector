@@ -142,6 +142,7 @@ class ApiInspectorController extends Controller
             $routeUri = $request->input('route_uri');
             $routeMethod = $request->input('route_method');
             $responseData = $request->input('response', []);
+            $responseStatus = $request->input('status');
             $timestamp = $request->input('timestamp', now()->toIso8601String());
 
             if (! $routeUri || ! $routeMethod) {
@@ -151,9 +152,9 @@ class ApiInspectorController extends Controller
             $driver = config('api-inspector.save_responses_driver', 'cache');
 
             if ($driver === 'json') {
-                return $this->service->saveResponseToJson($routeUri, $routeMethod, $responseData, $timestamp);
+                return $this->service->saveResponseToJson($routeUri, $routeMethod, $responseData, $responseStatus, $timestamp);
             } else {
-                return $this->service->saveResponseToCache($routeUri, $routeMethod, $responseData, $timestamp);
+                return $this->service->saveResponseToCache($routeUri, $routeMethod, $responseData, $responseStatus, $timestamp);
             }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);

@@ -7,7 +7,7 @@
         :key="index"
         class="saved-response-item"
       >
-        <div class="saved-response-content" @click="$emit('view-response', response)">
+        <div class="saved-response-content" @click="$emit('view-response', {is_saved: true, ...response})">
           <div>
             <strong>Response {{ responses.length - index }}</strong>
           </div>

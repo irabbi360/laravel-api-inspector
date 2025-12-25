@@ -386,7 +386,7 @@ class LaravelApiInspectorService
     /**
      * Save response to JSON file
      */
-    public function saveResponseToJson(string $routeUri, string $routeMethod, array $responseData, string $timestamp): JsonResponse
+    public function saveResponseToJson(string $routeUri, string $routeMethod, array $responseData, string $responseStatus, string $timestamp): JsonResponse
     {
         $responsePath = config('api-inspector.response_path');
         $storagePath = config('api-inspector.storage_path', 'storage');
@@ -419,6 +419,7 @@ class LaravelApiInspectorService
             'method' => $routeMethod,
             'uri' => $routeUri,
             'data' => $responseData,
+            'status' => $responseStatus,
         ];
 
         file_put_contents($filePath, json_encode($responses, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
@@ -432,7 +433,7 @@ class LaravelApiInspectorService
     /**
      * Save response to cache
      */
-    public function saveResponseToCache(string $routeUri, string $routeMethod, array $responseData, string $timestamp): JsonResponse
+    public function saveResponseToCache(string $routeUri, string $routeMethod, array $responseData, string $responseStatus, string $timestamp): JsonResponse
     {
         $cacheKey = 'api-inspector-response:'.md5($routeMethod.':'.$routeUri);
         $responses = Cache::get($cacheKey, []);
@@ -445,6 +446,7 @@ class LaravelApiInspectorService
             'method' => $routeMethod,
             'uri' => $routeUri,
             'data' => $responseData,
+            'status' => $responseStatus,
         ];
 
         Cache::put($cacheKey, $responses, now()->addDays(7));
