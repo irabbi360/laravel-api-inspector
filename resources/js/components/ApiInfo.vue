@@ -1,10 +1,4 @@
 <template>
-  <Toast
-      :message="toastMessage"
-      :type="toastType"
-      :visible="toastVisible"
-      @close="toastVisible = false"
-    />
   <div class="api-info-container">
     <!-- Route Information Section -->
     <div v-if="apiInfo" class="info-section">
@@ -79,7 +73,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import Toast from '../components/Toast.vue'
+const { showToast } = useToast()
 
 const props = defineProps({
   apiInfo: {
@@ -153,12 +147,9 @@ const copyToClipboard = (curlCode) => {
   // Try modern Clipboard API first
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(curlCode).then(() => {
-      toastMessage.value = 'Curl command copied to clipboard!'
-      toastType.value = 'success'
-      toastVisible.value = true
+      showToast('Curl command copied to clipboard!', 'success')
     }).catch((err) => {
-      toastMessage.value = 'Failed to copy curl command'
-      toastType.value = 'error'
+      showToast('Failed to copy curl command', 'error')
       toastVisible.value = true
       console.error('Clipboard API error:', err)
       fallbackCopyToClipboard(curlCode)
@@ -207,12 +198,9 @@ const fallbackCopyToClipboard = (text) => {
     const successful = document.execCommand('copy')
     
     if (successful) {
-      toastMessage.value = 'Curl command copied to clipboard!'
-      toastType.value = 'success'
-      toastVisible.value = true
+      showToast('Curl command copied to clipboard!', 'success')
     } else {
-      toastMessage.value = 'Failed to copy curl command'
-      toastType.value = 'error'
+      showToast('Failed to copy curl command', 'error')
       toastVisible.value = true
     }
     
@@ -221,9 +209,7 @@ const fallbackCopyToClipboard = (text) => {
   } catch (err) {
     console.error('Fallback copy error:', err)
     
-    toastMessage.value = 'Could not copy curl command. Please try again.'
-    toastType.value = 'error'
-    toastVisible.value = true
+    showToast('Could not copy curl command. Please try again.', 'error')
   }
 }
 </script>

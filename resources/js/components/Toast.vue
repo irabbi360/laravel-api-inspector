@@ -1,72 +1,56 @@
 <template>
   <Teleport to="body">
-    <div v-if="visible" class="toast" :class="type">
-      <div class="toast-content">
-        <span class="toast-icon">{{ typeIcon }}</span>
-        <span>{{ message }}</span>
+    <div class="toasts-container">
+      <div
+        v-for="toast in toasts"
+        :key="toast.id"
+        class="toast"
+        :class="toast.type"
+      >
+        <div class="toast-content">
+          <span class="toast-icon">{{ getIcon(toast.type) }}</span>
+          <span>{{ toast.message }}</span>
+        </div>
       </div>
     </div>
   </Teleport>
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { useToast } from '../composables/useToast'
 
-const props = defineProps({
-  message: {
-    type: String,
-    required: true
-  },
-  type: {
-    type: String,
-    default: 'success',
-    validator: (value) => ['success', 'error', 'info'].includes(value)
-  },
-  duration: {
-    type: Number,
-    default: 3000
-  },
-  visible: {
-    type: Boolean,
-    default: false
-  }
-})
+const { toasts } = useToast()
 
-const emit = defineEmits(['close'])
-
-const typeIcon = computed(() => {
+const getIcon = (type) => {
   const icons = {
     success: '✓',
     error: '✕',
     info: 'ℹ'
   }
-  return icons[props.type] || '✓'
-})
-
-watch(
-  () => props.visible,
-  (newVal) => {
-    if (newVal) {
-      setTimeout(() => {
-        emit('close')
-      }, props.duration)
-    }
-  }
-)
+  return icons[type] || '✓'
+}
 </script>
 
 <style scoped>
-.toast {
+.toasts-container {
   position: fixed;
   top: 20px;
   right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
   padding: 12px 20px;
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 9999;
   animation: slideIn 0.3s ease-out;
   font-size: 14px;
   max-width: 300px;
+  pointer-events: auto;
 }
 
 .toast-content {
