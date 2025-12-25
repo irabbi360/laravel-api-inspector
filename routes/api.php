@@ -12,4 +12,5 @@ Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(
     Route::post('api-inspector/test-request', [ApiInspectorController::class, 'testRequest'])->name('api-inspector.test-request');
     Route::post('api-inspector-docs/save-response', [ApiInspectorController::class, 'saveResponse'])->name('api-inspector.save-response');
     Route::get('api-inspector-docs/get-saved-responses', [ApiInspectorController::class, 'savedResponses'])->name('api-inspector.saved-responses');
+    Route::delete('api-inspector-docs/delete-response', [ApiInspectorController::class, 'deleteResponse'])->name('api-inspector.delete-response');
 });

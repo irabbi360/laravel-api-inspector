@@ -6,28 +6,76 @@
         v-for="(response, index) in responses"
         :key="index"
         class="saved-response-item"
-        @click="$emit('view-response', response)"
       >
-        <div>
-          <strong>Response {{ responses.length - index }}</strong>
+        <div class="saved-response-content" @click="$emit('view-response', response)">
+          <div>
+            <strong>Response {{ responses.length - index }}</strong>
+          </div>
+          <div class="saved-response-time">
+            {{ new Date(response.timestamp).toLocaleString() }}
+          </div>
         </div>
-        <div class="saved-response-time">
-          {{ new Date(response.timestamp).toLocaleString() }}
-        </div>
+        <button
+          class="delete-btn"
+          @click="deleteSavedResponse(index)"
+          title="Delete this response"
+        >
+          ✕
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-defineProps({
+import { useToast } from '../composables/useToast'
+
+const props = defineProps({
   responses: {
     type: Array,
     default: () => []
+  },
+  route: {
+    type: Object,
+    default: null
   }
 })
 
-defineEmits(['view-response'])
+const emit = defineEmits(['view-response', 'delete-response'])
+const { showToast } = useToast()
+
+const deleteSavedResponse = async (index) => {
+  if (!props.route) return
+
+  try {
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/delete-response`,
+      {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          route_uri: props.route.uri,
+          route_method: props.route.http_method,
+          index: index
+        })
+      }
+    )
+
+    if (response.ok) {
+      emit('delete-response', index)
+      showToast('Response deleted successfully', 'success')
+    } else {
+      showToast('Failed to delete response', 'error')
+    }
+  } catch (error) {
+    console.error('Error deleting response:', error)
+    showToast('Error deleting response', 'error')
+  }
+}
 </script>
 
 <style scoped>
@@ -54,7 +102,9 @@ defineEmits(['view-response'])
   border-radius: 4px;
   padding: 15px;
   margin-bottom: 10px;
-  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   transition: background 0.2s;
 }
 
@@ -62,9 +112,30 @@ defineEmits(['view-response'])
   background: #fafafa;
 }
 
+.saved-response-content {
+  flex: 1;
+  cursor: pointer;
+}
+
 .saved-response-time {
   color: #999;
   font-size: 0.85em;
   margin-top: 5px;
+}
+
+.delete-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.2s;
+  margin-left: 10px;
+}
+
+.delete-btn:hover {
+  background: #dc2626;
 }
 </style>

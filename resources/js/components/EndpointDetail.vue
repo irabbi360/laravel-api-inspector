@@ -19,12 +19,25 @@
       <div class="detail-body-right">
         <Tabs
           v-model="activeTab"
-          :tabs="['Request Body', 'Response', 'Response Schema', 'Saved Response History', 'Info']"
+          :tabs="['Request Body', 'Response', 'Saved Responses', 'Response Schema', 'Info']"
         >
           <template #default="{ activeTab }">
             <div v-show="activeTab === 0" class="tab-content">
-              <RequestBodySection :request-rules="route.request_rules" />
+              <RequestBodySection
+                v-if="route.request_rules && Object.keys(route.request_rules).length > 0"
+                :request-rules="route.request_rules"
+              />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p v-if="route.http_method !== 'GET'">
+                  Request body not available! Please use the request rules for expected payload.
+                </p>
+                <p v-if="route.http_method === 'GET'">
+                  This endpoint does not accept a request body.
+                </p>
+              </div>
             </div>
+            
             <div v-show="activeTab === 1" class="tab-content">
               <ResponseViewer
                 v-if="lastResponse"
@@ -37,15 +50,32 @@
                 <p>Send a request to see the response</p>
               </div>
             </div>
+            
             <div v-show="activeTab === 2" class="tab-content">
-              <ResponseSchema :schema="route.response_schema" />
-            </div>
-            <div v-show="activeTab === 3" class="tab-content">
               <SavedResponses
+                v-if="savedResponses && savedResponses.length > 0"
                 :responses="savedResponses"
+                :route="route"
                 @view-response="$emit('view-response', $event)"
+                @delete-response="$emit('delete-response', $event)"
               />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p>Saved responses empty!</p>
+              </div>
             </div>
+            
+            <div v-show="activeTab === 3" class="tab-content">
+              <ResponseSchema
+                v-if="route.response_schema && Object.keys(route.response_schema).length > 0"
+                :schema="route.response_schema"
+                />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p>Response schema not available!</p>
+              </div>
+            </div>
+            
             <div v-show="activeTab === 4" class="tab-content">
                 <ApiInfo :api-info="route" />
               </div>
@@ -95,7 +125,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams'])
+defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams', 'delete-response'])
 
 const activeTab = ref(0)
 

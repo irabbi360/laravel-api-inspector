@@ -230,4 +230,87 @@ class ApiInspectorController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Delete a saved API response
+     */
+    public function deleteResponse(Request $request): JsonResponse
+    {
+        try {
+            $routeUri = $request->input('route_uri');
+            $routeMethod = $request->input('route_method');
+            $index = $request->input('index');
+
+            if (! $routeUri || ! $routeMethod || $index === null) {
+                return response()->json(['error' => 'route_uri, route_method, and index are required'], 400);
+            }
+
+            $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+
+            if ($driver === 'json') {
+                $responsePath = config('api-inspector.response_path');
+
+                if ($storagePath === 'local') {
+                    // Save to public folder (root public)
+                    $responsePath = public_path($responsePath);
+                } else {
+                    // Save to storage/public folder (default: 'storage')
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
+                $fileName = md5($routeMethod.':'.$routeUri).'.json';
+                $filePath = $responsePath.'/responses/'.$fileName;
+
+                if (file_exists($filePath)) {
+                    $responses = json_decode(file_get_contents($filePath), true) ?? [];
+
+                    // Remove response at the given index
+                    if (isset($responses[$index])) {
+                        unset($responses[$index]);
+                        // Re-index array
+                        $responses = array_values($responses);
+
+                        // Save updated responses back to file
+                        file_put_contents($filePath, json_encode($responses, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+                        return response()->json([
+                            'message' => 'Response deleted successfully',
+                            'uri' => $routeUri,
+                            'method' => $routeMethod,
+                            'index' => $index,
+                        ]);
+                    }
+
+                    return response()->json(['error' => 'Response index not found'], 404);
+                }
+
+                return response()->json(['error' => 'No saved responses found for this route'], 404);
+            } else {
+                // Delete from cache
+                $cacheKey = 'api-inspector-response:'.md5($routeMethod.':'.$routeUri);
+                $responses = Cache::get($cacheKey, []);
+
+                if (isset($responses[$index])) {
+                    unset($responses[$index]);
+                    // Re-index array
+                    $responses = array_values($responses);
+
+                    // Update cache
+                    Cache::put($cacheKey, $responses, now()->addDays(7));
+
+                    return response()->json([
+                        'message' => 'Response deleted successfully',
+                        'uri' => $routeUri,
+                        'method' => $routeMethod,
+                        'index' => $index,
+                    ]);
+                }
+
+                return response()->json(['error' => 'Response index not found'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }

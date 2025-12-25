@@ -27,6 +27,7 @@
           @save-response="saveCurrentResponse"
           @view-response="viewSavedResponse"
           @update:pathParams="(value) => (pathParams = value)"
+          @delete-response="deleteSavedResponse"
         />
         <div v-else class="empty-state">
           <div class="empty-state-icon">🚀</div>
@@ -265,6 +266,12 @@ const loadSavedResponses = async () => {
 
 const viewSavedResponse = (saved) => {
   lastResponse.value = saved
+}
+
+const deleteSavedResponse = (index) => {
+  if (savedResponses.value.length > index) {
+    savedResponses.value.splice(index, 1)
+  }
 }
 
 // Watch for authToken changes and save to localStorage

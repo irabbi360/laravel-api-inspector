@@ -5,6 +5,8 @@ const toasts = ref([])
 
 export function useToast() {
   const showToast = (message, type = 'success', duration = 3000) => {
+    console.log('toast alert');
+    
     const id = toastId++
     const toast = {
       id,
