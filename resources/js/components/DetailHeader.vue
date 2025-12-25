@@ -1,14 +1,12 @@
 <template>
-  <div class="detail-header">
-    <div class="detail-method-path">
-      <span :class="['detail-method-badge', route.method.toLowerCase()]">
-        {{ route.method }}
-      </span>
-      <span class="detail-path">{{ route.uri }}</span>
-      <span v-if="route.auth" class="auth-badge">Requires Auth</span>
+  <div class="detail-header flex justify-between">
+    <div class="detail-description">
+      <span class="fs-20 font-bold me-2">{{ route.description }}</span>
+      <span v-if="route.requires_auth" class="auth-badge">Requires Auth</span>
     </div>
-    <div v-if="route.description" class="detail-description">
-      {{ route.description }}
+    <div class="detail-method-path">
+      <span :class="['detail-method-badge', route.http_method.toLowerCase()]">{{ route.http_method }}</span>
+      <span class="detail-path">{{ route.uri }}</span>
     </div>
   </div>
 </template>
@@ -24,7 +22,7 @@ defineProps({
 
 <style scoped>
 .detail-header {
-  padding: 30px;
+  padding: 15px 15px 10px;
   background: white;
   border-bottom: 1px solid #e0e0e0;
   flex-shrink: 0;
@@ -89,9 +87,9 @@ defineProps({
   display: inline-block;
   background: #fff3cd;
   color: #856404;
-  padding: 4px 8px;
-  border-radius: 3px;
-  font-size: 0.8em;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: .8em;
   border: 1px solid #ffc107;
 }
 </style>

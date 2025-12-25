@@ -4,12 +4,12 @@
       <div class="sidebar-group-title">{{ group }}</div>
       <div
         v-for="route in routes"
-        :key="`${route.method}-${route.uri}`"
+        :key="`${route.http_method}-${route.uri}`"
         :class="['sidebar-route', { active: isActive(route) }]"
         @click="$emit('select-endpoint', route)"
       >
-        <span :class="['route-method-badge', route.method.toLowerCase()]">
-          {{ route.method }}
+        <span :class="['route-method-badge', route.http_method.toLowerCase()]">
+          {{ route.http_method }}
         </span>
         <span class="route-path" :title="route.uri">{{ route.uri }}</span>
       </div>
@@ -36,7 +36,7 @@ defineEmits(['select-endpoint'])
 const isActive = (route) => {
   if (!props.selectedRoute) return false
   return (
-    props.selectedRoute.method === route.method &&
+    props.selectedRoute.http_method === route.http_method &&
     props.selectedRoute.uri === route.uri
   )
 }

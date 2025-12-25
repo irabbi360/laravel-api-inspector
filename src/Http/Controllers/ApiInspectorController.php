@@ -36,82 +36,7 @@ class ApiInspectorController extends Controller
     public function fetchApiInfo(Request $request): JsonResponse
     {
         try {
-            $routes = [];
-            $requestRuleExtractor = new \Irabbi360\LaravelApiInspector\Extractors\RequestRuleExtractor;
-            $uriPrefix = config('api-inspector.only_route_uri_start_with', '');
-            $groupBy = $request->query('groupBy', 'default'); // Get groupBy parameter from query
-
-            // Extract all API routes from the router
-            foreach (\Route::getRoutes()->getRoutes() as $route) {
-                // Skip documentation routes and internal routes
-                if ($this->service->shouldSkipRoute($route)) {
-                    continue;
-                }
-
-                // Filter by URI prefix if configured
-                if ($uriPrefix && ! \Illuminate\Support\Str::startsWith($route->uri, $uriPrefix)) {
-                    continue;
-                }
-
-                $methods = $route->methods;
-                $methods = array_filter($methods, fn ($m) => ! in_array($m, ['HEAD', 'OPTIONS']));
-
-                foreach ($methods as $method) {
-                    $requestRules = [];
-                    $parameters = [];
-                    $controllerName = '';
-
-                    try {
-                        // Extract request rules if there's a FormRequest
-                        $controllerName = $route->getActionName();
-                        if ($controllerName && $controllerName !== 'Closure') {
-                            $requestRules = $requestRuleExtractor->extract($controllerName);
-
-                            // If no rules found from FormRequest, try to extract from Request class parameter
-                            if (empty($requestRules)) {
-                                $requestRules = $this->service->generateExampleRequestRules($controllerName);
-                            }
-                        }
-                    } catch (\Exception $e) {
-                        // Silent fail, FormRequest extraction is optional
-                        // This can happen with custom Rule objects or other extraction issues
-                    }
-
-                    try {
-                        // Extract parameters from route URI
-                        $parameters = $this->service->extractRouteParameters($route->uri);
-                    } catch (\Exception $e) {
-                        // Silent fail
-                    }
-
-                    $responseSchema = null;
-                    try {
-                        // Extract response schema from Resource if it exists
-                        $responseSchema = $this->service->extractResponseSchema($route);
-                    } catch (\Exception $e) {
-                        // Silent fail
-                    }
-
-                    $routes[] = [
-                        'method' => strtoupper($method),
-                        'uri' => $route->uri,
-                        'name' => $route->getName() ?? '',
-                        'description' => $this->service->getRouteDescription($route),
-                        'requires_auth' => $this->service->requiresAuth($route),
-                        'parameters' => $parameters,
-                        'request_rules' => $requestRules,
-                        'response_schema' => $responseSchema,
-                        'response_example' => ['success' => true, 'message' => 'Success'],
-                        ...$this->service->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
-                    ];
-                }
-            }
-
-            // Assign sequential group_index to each route (0, 1, 2, 3...)
-            foreach ($routes as $index => &$route) {
-                $route['group_index'] = $index;
-            }
-            unset($route);
+            [$routes, $groupBy] = $this->service->apiListData($request);
 
             return response()->json([
                 'title' => config('api-inspector.title') ?? 'Laravel API Inspector',
@@ -217,6 +142,7 @@ class ApiInspectorController extends Controller
             $routeUri = $request->input('route_uri');
             $routeMethod = $request->input('route_method');
             $responseData = $request->input('response', []);
+            $responseStatus = $request->input('status');
             $timestamp = $request->input('timestamp', now()->toIso8601String());
 
             if (! $routeUri || ! $routeMethod) {
@@ -226,9 +152,9 @@ class ApiInspectorController extends Controller
             $driver = config('api-inspector.save_responses_driver', 'cache');
 
             if ($driver === 'json') {
-                return $this->service->saveResponseToJson($routeUri, $routeMethod, $responseData, $timestamp);
+                return $this->service->saveResponseToJson($routeUri, $routeMethod, $responseData, $responseStatus, $timestamp);
             } else {
-                return $this->service->saveResponseToCache($routeUri, $routeMethod, $responseData, $timestamp);
+                return $this->service->saveResponseToCache($routeUri, $routeMethod, $responseData, $responseStatus, $timestamp);
             }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
@@ -301,6 +227,89 @@ class ApiInspectorController extends Controller
             $docs = json_decode(file_get_contents($docsFile), true);
 
             return response()->json($docs);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a saved API response
+     */
+    public function deleteResponse(Request $request): JsonResponse
+    {
+        try {
+            $routeUri = $request->input('route_uri');
+            $routeMethod = $request->input('route_method');
+            $index = $request->input('index');
+
+            if (! $routeUri || ! $routeMethod || $index === null) {
+                return response()->json(['error' => 'route_uri, route_method, and index are required'], 400);
+            }
+
+            $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+
+            if ($driver === 'json') {
+                $responsePath = config('api-inspector.response_path');
+
+                if ($storagePath === 'local') {
+                    // Save to public folder (root public)
+                    $responsePath = public_path($responsePath);
+                } else {
+                    // Save to storage/public folder (default: 'storage')
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
+                $fileName = md5($routeMethod.':'.$routeUri).'.json';
+                $filePath = $responsePath.'/responses/'.$fileName;
+
+                if (file_exists($filePath)) {
+                    $responses = json_decode(file_get_contents($filePath), true) ?? [];
+
+                    // Remove response at the given index
+                    if (isset($responses[$index])) {
+                        unset($responses[$index]);
+                        // Re-index array
+                        $responses = array_values($responses);
+
+                        // Save updated responses back to file
+                        file_put_contents($filePath, json_encode($responses, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+                        return response()->json([
+                            'message' => 'Response deleted successfully',
+                            'uri' => $routeUri,
+                            'method' => $routeMethod,
+                            'index' => $index,
+                        ]);
+                    }
+
+                    return response()->json(['error' => 'Response index not found'], 404);
+                }
+
+                return response()->json(['error' => 'No saved responses found for this route'], 404);
+            } else {
+                // Delete from cache
+                $cacheKey = 'api-inspector-response:'.md5($routeMethod.':'.$routeUri);
+                $responses = Cache::get($cacheKey, []);
+
+                if (isset($responses[$index])) {
+                    unset($responses[$index]);
+                    // Re-index array
+                    $responses = array_values($responses);
+
+                    // Update cache
+                    Cache::put($cacheKey, $responses, now()->addDays(7));
+
+                    return response()->json([
+                        'message' => 'Response deleted successfully',
+                        'uri' => $routeUri,
+                        'method' => $routeMethod,
+                        'index' => $index,
+                    ]);
+                }
+
+                return response()->json(['error' => 'Response index not found'], 404);
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

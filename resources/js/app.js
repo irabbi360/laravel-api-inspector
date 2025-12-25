@@ -1,8 +1,10 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import Home from './pages/Home.vue';
+import Toast from './components/Toast.vue'
 import '../css/api-docs.css'
 import { createRouter, createWebHistory } from 'vue-router';
+import { useToast } from './composables/useToast';
 
 window.ApiInspector.basePath = '/' + window.ApiInspector.path;
 
@@ -29,6 +31,9 @@ const router = createRouter({
 
 const app = createApp(App)
 
+window.useToast = useToast
+
+app.component('Toast', Toast)
 app.use(router);
 app.mixin({
   computed: {

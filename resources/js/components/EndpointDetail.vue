@@ -19,12 +19,26 @@
       <div class="detail-body-right">
         <Tabs
           v-model="activeTab"
-          :tabs="['Request Body Parameters', 'Current Response', 'Response Schema', 'Saved Responses History']"
+          :tabs="['Request Body', 'Response', 'Saved Responses', 'Response Schema', 'Info']"
         >
           <template #default="{ activeTab }">
             <div v-show="activeTab === 0" class="tab-content">
-              <RequestBodySection :request-rules="route.request_rules" />
+              <RequestBodySection
+                v-if="route.request_rules && Object.keys(route.request_rules).length > 0"
+                :request-rules="route.request_rules"
+              />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <template v-if="route.http_method !== 'GET' && route.http_method !== 'DELETE'">
+                  <p>Request body not available!</p>
+                  <p>Please use the request rules for expected payload.</p>
+                </template>
+                <p v-if="route.http_method === 'GET'">
+                  This endpoint does not accept a request body.
+                </p>
+              </div>
             </div>
+            
             <div v-show="activeTab === 1" class="tab-content">
               <ResponseViewer
                 v-if="lastResponse"
@@ -37,15 +51,36 @@
                 <p>Send a request to see the response</p>
               </div>
             </div>
+            
             <div v-show="activeTab === 2" class="tab-content">
-              <ResponseSchema :schema="route.response_schema" />
-            </div>
-            <div v-show="activeTab === 3" class="tab-content">
               <SavedResponses
+                v-if="savedResponses && savedResponses.length > 0"
                 :responses="savedResponses"
+                :route="route"
                 @view-response="$emit('view-response', $event)"
+                @delete-response="$emit('delete-response', $event)"
               />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p>Saved responses empty!</p>
+              </div>
             </div>
+            
+            <div v-show="activeTab === 3" class="tab-content">
+              <ResponseSchema
+                v-if="route.response_schema && Object.keys(route.response_schema).length > 0"
+                :schema="route.response_schema"
+                />
+              <div v-else class="empty-state">
+                <div class="empty-state-icon">📄</div>
+                <p class="text-center">Response schema not available!</p>
+                <p class="text-center">Please use the resource class to define the response schema.</p>
+              </div>
+            </div>
+            
+            <div v-show="activeTab === 4" class="tab-content">
+                <ApiInfo :api-info="route" />
+              </div>
           </template>
         </Tabs>
       </div>
@@ -63,6 +98,7 @@ import ResponseSchema from './ResponseSchema.vue'
 import ResponseViewer from './ResponseViewer.vue'
 import SavedResponses from './SavedResponses.vue'
 import Tabs from './Tabs.vue'
+import ApiInfo from './ApiInfo.vue'
 
 const props = defineProps({
   route: {
@@ -91,7 +127,7 @@ const props = defineProps({
   }
 })
 
-defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams'])
+defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams', 'delete-response'])
 
 const activeTab = ref(0)
 
@@ -122,7 +158,7 @@ watch(() => props.lastResponse, (newResponse) => {
 .detail-body-left {
   flex: 1;
   overflow-y: auto;
-  padding: 30px;
+  padding: 10px 20px;
   border-right: 1px solid #e0e0e0;
   background: #fff;
 }
@@ -130,7 +166,7 @@ watch(() => props.lastResponse, (newResponse) => {
 .detail-body-right {
   flex: 1;
   overflow-y: auto;
-  padding: 30px;
+  padding: 10px 20px;
   background: #f9f9f9;
 }
 
