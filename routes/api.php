@@ -1,8 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
+use Irabbi360\LaravelApiInspector\Http\Controllers\DashboardController;
 use Irabbi360\LaravelApiInspector\Http\Middleware\ApiInspectorMiddleware;
+use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 
 Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(function () {
     Route::get('api-inspector-docs', [ApiInspectorController::class, 'fetchApiInfo'])->name('api-inspector.docs.fetch');
@@ -13,4 +14,6 @@ Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(
     Route::post('api-inspector-docs/save-response', [ApiInspectorController::class, 'saveResponse'])->name('api-inspector.save-response');
     Route::get('api-inspector-docs/get-saved-responses', [ApiInspectorController::class, 'savedResponses'])->name('api-inspector.saved-responses');
     Route::delete('api-inspector-docs/delete-response', [ApiInspectorController::class, 'deleteResponse'])->name('api-inspector.delete-response');
+    // Dashboard analytics routes
+    Route::get('api-inspector-docs/analytics', [DashboardController::class, 'getDashboardData'])->name('api-inspector.analytics');
 });

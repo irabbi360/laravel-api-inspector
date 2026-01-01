@@ -14,7 +14,7 @@ it('captures JSON API responses when middleware is enabled', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/api/users');
 
@@ -23,7 +23,7 @@ it('captures JSON API responses when middleware is enabled', function () {
         200
     );
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -35,13 +35,13 @@ it('does not capture when middleware is disabled', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/api/users');
 
     $response = new JsonResponse(['success' => true, 'data' => []], 200);
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -53,7 +53,7 @@ it('does not capture non-JSON responses', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/api/users');
 
@@ -61,7 +61,7 @@ it('does not capture non-JSON responses', function () {
     $response = response('<!DOCTYPE html><html></html>', 200)
         ->header('Content-Type', 'text/html');
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -77,13 +77,13 @@ it('only captures API routes that match configuration', function () {
     $middleware = app(CaptureResponseMiddleware::class);
 
     // Non-API route
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/web/users');
 
     $response = new JsonResponse(['success' => true], 200);
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -95,7 +95,7 @@ it('captures successful responses (2xx status codes)', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'POST');
     $request->server->set('REQUEST_URI', '/api/users');
 
@@ -105,7 +105,7 @@ it('captures successful responses (2xx status codes)', function () {
         201
     );
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -117,7 +117,7 @@ it('does not capture error responses by default', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'POST');
     $request->server->set('REQUEST_URI', '/api/users');
 
@@ -127,7 +127,7 @@ it('does not capture error responses by default', function () {
         400
     );
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -139,7 +139,7 @@ it('gracefully handles invalid JSON responses', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/api/users');
 
@@ -147,7 +147,7 @@ it('gracefully handles invalid JSON responses', function () {
     $response = response('invalid json {', 200)
         ->header('Content-Type', 'application/json');
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -164,13 +164,13 @@ it('uses configured response TTL', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'GET');
     $request->server->set('REQUEST_URI', '/api/users');
 
     $response = new JsonResponse(['success' => true], 200);
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 
@@ -182,7 +182,7 @@ it('handles empty response content gracefully', function () {
 
     $middleware = app(CaptureResponseMiddleware::class);
 
-    $request = new Request();
+    $request = new Request;
     $request->server->set('REQUEST_METHOD', 'DELETE');
     $request->server->set('REQUEST_URI', '/api/users/1');
 
@@ -190,7 +190,7 @@ it('handles empty response content gracefully', function () {
     $response = response('', 204)
         ->header('Content-Type', 'application/json');
 
-    $next = fn($req) => $response;
+    $next = fn ($req) => $response;
 
     $result = $middleware->handle($request, $next);
 

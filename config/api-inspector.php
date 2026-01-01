@@ -78,4 +78,55 @@ return [
     * Can be used to define default response status codes to be shown in the docs
     */
     'default_responses' => ['200', '400', '401', '403', '404', '405', '422', '429', '500', '503'],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Phase 3: Analytics, Dashboard, and Advanced Features
+    |--------------------------------------------------------------------------
+    */
+
+    'analytics' => [
+        'enabled' => true,
+        'track_response_time' => true,
+        'track_memory_usage' => true,
+        'track_errors' => true,
+        'retention_days' => 30, // Keep analytics for 30 days
+        'track_only_uri_start_with' => 'api/',
+        'exclude_routes' => [
+            'api-inspector-docs',
+            'api-inspector',
+            'sanctum',
+            'telescope',
+            'docs',
+            '_ignition'
+        ]
+    ],
+
+    'dashboard' => [
+        'enabled' => true,
+        'path' => 'api-inspector/dashboard', // URL path for dashboard
+        'auth_middleware' => ['web'], // Middleware for dashboard protection
+    ],
+
+    'webhooks' => [
+        // 'user.created' => [
+        //     'event' => 'user.created',
+        //     'description' => 'Fired when a new user is created',
+        //     'url' => 'https://example.com/webhooks/user/created',
+        //     'method' => 'POST',
+        //     'payload' => [
+        //         'id' => 'integer',
+        //         'email' => 'string',
+        //         'name' => 'string',
+        //     ],
+        //     'examples' => [],
+        //     'active' => true,
+        // ],
+    ],
+
+    'auth_testing' => [
+        'enabled' => true,
+        'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
+        'test_endpoint_prefix' => '/api/',
+    ],
 ];

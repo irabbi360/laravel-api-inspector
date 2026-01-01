@@ -202,7 +202,7 @@ class ResponseCache
     {
         $results = [];
         $route = str_replace('/', '_', $route);
-        $directory = storage_path("api-docs/cached-responses");
+        $directory = storage_path('api-docs/cached-responses');
 
         if (! is_dir($directory)) {
             return [];
@@ -234,7 +234,7 @@ class ResponseCache
     protected function clearJsonForRoute(string $route): bool
     {
         $route = str_replace('/', '_', $route);
-        $directory = storage_path("api-docs/cached-responses");
+        $directory = storage_path('api-docs/cached-responses');
 
         if (! is_dir($directory)) {
             return true;
@@ -260,7 +260,7 @@ class ResponseCache
      */
     protected function clearAllJson(): bool
     {
-        $directory = storage_path("api-docs/cached-responses");
+        $directory = storage_path('api-docs/cached-responses');
 
         if (! is_dir($directory)) {
             return true;

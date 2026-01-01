@@ -288,6 +288,187 @@ storage/api-docs/cached-responses/
 - OpenAPI spec contains actual response schemas
 - HTML docs show real data from your API
 
+## Phase 3: Dashboard, Analytics & Advanced Features
+
+### API Analytics & Monitoring
+
+Automatically track and monitor API performance:
+
+```php
+// Enable analytics in config/api-inspector.php
+'analytics' => [
+    'enabled' => true,
+    'track_response_time' => true,
+    'track_memory_usage' => true,
+    'track_errors' => true,
+    'retention_days' => 30,
+]
+```
+
+**Features:**
+- ✅ Real-time request tracking
+- ✅ Response time analytics
+- ✅ Memory usage monitoring
+- ✅ Error rate calculation
+- ✅ Performance trends and insights
+- ✅ Automatic data retention management
+
+### Web UI Dashboard
+
+Access the Telescope-like dashboard at `/api-inspector/dashboard`:
+
+**Dashboard Includes:**
+- Real-time request metrics
+- Response time distribution charts
+- Error rate monitoring
+- Status code statistics
+- Top slow routes identification
+- Recent errors tracking
+- Route-level performance analytics
+- Customizable time ranges (1h, 24h, 7d, 30d)
+
+```php
+'dashboard' => [
+    'enabled' => true,
+    'path' => 'api-inspector/dashboard',
+    'auth_middleware' => ['web'], // Protect dashboard access
+]
+```
+
+### Advanced Authentication Testing
+
+Test different authentication schemes directly from the dashboard:
+
+```php
+'auth_testing' => [
+    'enabled' => true,
+    'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
+    'test_endpoint_prefix' => '/api/',
+]
+```
+
+**Supported Schemes:**
+- Bearer Token
+- API Key
+- Basic Authentication
+- OAuth 2.0
+
+**Test Authentication:**
+```javascript
+// From dashboard or API
+POST /api-inspector/api/test-auth
+{
+    "type": "bearer",
+    "endpoint": "/api/users",
+    "token": "your-token"
+}
+```
+
+### Webhook Documentation Support
+
+Document and manage webhooks with automatic payload tracking:
+
+```php
+'webhooks' => [
+    'user.created' => [
+        'event' => 'user.created',
+        'description' => 'Fired when a new user is created',
+        'url' => 'https://example.com/webhooks/user',
+        'method' => 'POST',
+        'payload' => [
+            'id' => 'integer',
+            'email' => 'string',
+            'name' => 'string',
+        ],
+        'examples' => [
+            [
+                'id' => 1,
+                'email' => 'john@example.com',
+                'name' => 'John Doe',
+            ],
+        ],
+        'retry' => [
+            'max_attempts' => 3,
+            'backoff' => 'exponential',
+            'initial_delay' => 1000,
+        ],
+        'active' => true,
+    ],
+]
+```
+
+**Webhook Features:**
+- Event documentation
+- Payload schema definition
+- Example payloads
+- Retry policy configuration
+- Webhook status tracking
+- Automatic retry management
+
+### Analytics API
+
+Programmatically access analytics:
+
+```php
+use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+
+// Get route statistics
+$stats = ApiAnalytic::getRouteStats('api/users/index');
+// Returns: total_requests, avg_response_time, error_rate, etc.
+
+// Get top slow routes
+$slowRoutes = ApiAnalytic::getTopSlowRoutes(10);
+
+// Get top error routes
+$errorRoutes = ApiAnalytic::getTopErrorRoutes(10);
+
+// Get status code distribution
+$codes = ApiAnalytic::getStatusCodeStats();
+
+// Get recent analytics
+$recent = ApiAnalytic::recent(60)->get(); // Last 60 minutes
+
+// Get errors
+$errors = ApiAnalytic::errors()->get();
+
+// Get slow requests
+$slow = ApiAnalytic::slow(500)->get(); // Over 500ms
+```
+
+### Configuration
+
+Edit `config/api-inspector.php`:
+
+```php
+return [
+    // ... existing config ...
+
+    'analytics' => [
+        'enabled' => true,
+        'track_response_time' => true,
+        'track_memory_usage' => true,
+        'track_errors' => true,
+        'retention_days' => 30,
+    ],
+
+    'dashboard' => [
+        'enabled' => true,
+        'path' => 'api-inspector/dashboard',
+        'auth_middleware' => ['web'],
+    ],
+
+    'auth_testing' => [
+        'enabled' => true,
+        'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
+        'test_endpoint_prefix' => '/api/',
+    ],
+
+    'webhooks' => [
+        // Define your webhooks here
+    ],
+];
+```
+
 ## Configuration
 
 ## How It Works
@@ -406,11 +587,11 @@ composer format        # Format code with Pint
 - ✅ Runtime response capture middleware - Automatically capture real API responses
 - ✅ Response caching - Cache responses with both file and cache driver support
 
-### Phase 3 (Planned)
-- 📋 Web UI dashboard (Telescope-like)
-- 🔐 Advanced authentication testing
-- 🪝 Webhook documentation support
-- 📊 API analytics and monitoring
+### Phase 3 (Completed ✅)
+- ✅ Web UI dashboard (Telescope-like) - Real-time analytics and monitoring
+- ✅ Advanced authentication testing - Multiple auth schemes support
+- ✅ Webhook documentation support - Document and manage webhooks
+- ✅ API analytics and monitoring - Track requests, response times, errors
 
 ## Troubleshooting
 

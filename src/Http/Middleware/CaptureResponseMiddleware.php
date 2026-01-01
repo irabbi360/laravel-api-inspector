@@ -3,9 +3,9 @@
 namespace Irabbi360\LaravelApiInspector\Http\Middleware;
 
 use Closure;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Http\JsonResponse;
 use Irabbi360\LaravelApiInspector\Writers\CacheWriter;
 use Irabbi360\LaravelApiInspector\Writers\JsonFileWriter;
 
