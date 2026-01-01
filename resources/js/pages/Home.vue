@@ -146,6 +146,14 @@ const selectEndpoint = (route) => {
 const sendRequest = async () => {
   if (!selectedRoute.value) return
 
+  // Check if all required path parameters are filled
+  const emptyParams = Object.entries(pathParams.value).filter(([_, value]) => !value || value.trim() === '')
+  if (emptyParams.length > 0) {
+    const missingParams = emptyParams.map(([param]) => param).join(', ')
+    showToast(`Required path parameters missing: ${missingParams}`, 'error')
+    return
+  }
+
   try {
     sending.value = true
     
