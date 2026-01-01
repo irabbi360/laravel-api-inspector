@@ -98,8 +98,8 @@ return [
             'sanctum',
             'telescope',
             'docs',
-            '_ignition'
-        ]
+            '_ignition',
+        ],
     ],
 
     'dashboard' => [

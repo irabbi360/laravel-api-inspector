@@ -4,8 +4,8 @@ namespace Irabbi360\LaravelApiInspector\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Symfony\Component\HttpFoundation\Response;
 
 class AnalyticsMiddleware
 {

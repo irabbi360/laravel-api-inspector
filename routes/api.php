@@ -1,9 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 use Irabbi360\LaravelApiInspector\Http\Controllers\DashboardController;
 use Irabbi360\LaravelApiInspector\Http\Middleware\ApiInspectorMiddleware;
-use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 
 Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(function () {
     Route::get('api-inspector-docs', [ApiInspectorController::class, 'fetchApiInfo'])->name('api-inspector.docs.fetch');
