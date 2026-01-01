@@ -28,11 +28,21 @@ return [
         'html' => true,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Response Capture Configuration
+    |--------------------------------------------------------------------------
+    | Phase 2: Runtime response capture and caching
+    |
+    */
+
     'save_responses' => true,
 
     'save_responses_driver' => 'json', // 'cache' or 'json'
 
     'middleware_capture' => true,
+
+    'response_ttl' => 3600, // TTL for cached responses in seconds (1 hour)
 
     'auth' => [
         'type' => 'bearer',

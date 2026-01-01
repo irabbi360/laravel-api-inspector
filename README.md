@@ -52,8 +52,8 @@ http://localhost:8000/api-docs
 You'll see a beautiful HTML documentation page with all your API endpoints!
 
 You can also access:
-- **Postman Collection**: `http://localhost:8000/api/docs/postman` (download)
-- **OpenAPI Spec**: `http://localhost:8000/api/docs/openapi` (download)
+- **Postman Collection**: `http://localhost:8000/api-docs/postman` (download)
+- **OpenAPI Spec**: `http://localhost:8000/api-docs/openapi` (download)
 
 ### Create a FormRequest with Validation Rules
 
@@ -135,7 +135,7 @@ Or without the annotation, it will auto-detect from the return type:
 After generating, automatically view your documentation:
 
 ```
-http://localhost:8000/api/docs
+http://localhost:8000/api-docs
 ```
 
 That's it! 🎉 Your API is now documented and accessible via browser.
@@ -144,9 +144,9 @@ That's it! 🎉 Your API is now documented and accessible via browser.
 
 The command generates documentation in three formats:
 
-- **HTML Docs** - `http://localhost:8000/api/docs` (view in browser)
-- **Postman Collection** - `http://localhost:8000/api/docs/postman` (download for Postman)
-- **OpenAPI Spec** - `http://localhost:8000/api/docs/openapi` (use with Swagger UI, etc.)
+- **HTML Docs** - `http://localhost:8000/api-docs` (view in browser)
+- **Postman Collection** - `http://localhost:8000/api-docs/postman` (download for Postman)
+- **OpenAPI Spec** - `http://localhost:8000/api-docs/openapi` (use with Swagger UI, etc.)
 
 Files are also saved to `storage/api-docs/` directory for backup.
 
@@ -166,7 +166,11 @@ return [
 
     'save_responses' => true,        // Save example responses to JSON
 
-    'middleware_capture' => true,    // Capture real responses (experimental)
+    'save_responses_driver' => 'json', // 'cache' or 'json' - Phase 2
+
+    'middleware_capture' => true,    // Capture real responses - Phase 2
+
+    'response_ttl' => 3600,          // Cache TTL in seconds (1 hour) - Phase 2
 
     'auth' => [
         'type' => 'bearer',
@@ -176,6 +180,115 @@ return [
     'response_path' => storage_path('api-docs'),
 ];
 ```
+
+## Phase 2: Runtime Response Capture & Caching
+
+### Middleware Response Capture
+
+Automatically capture real API responses from your running endpoints:
+
+```php
+// The middleware automatically captures successful (2xx) JSON responses
+// Configuration in config/api-inspector.php:
+
+'middleware_capture' => true,  // Enable response capture
+'save_responses_driver' => 'json', // Store in files or cache
+'response_ttl' => 3600,       // Cache expiration time
+```
+
+**Features:**
+- ✅ Captures real API responses automatically
+- ✅ Only captures successful (2xx) responses
+- ✅ Only targets API routes (configurable prefix)
+- ✅ Saves responses to JSON files or Laravel cache
+- ✅ Includes capture timestamp for freshness tracking
+- ✅ Graceful error handling (doesn't break your API)
+
+### Using ResponseCache Class
+
+Programmatically manage cached responses:
+
+```php
+use Irabbi360\LaravelApiInspector\Support\ResponseCache;
+
+class YourController extends Controller
+{
+    public function someAction(ResponseCache $responseCache)
+    {
+        // Store a response
+        $responseCache->store('api/users/index', 200, [
+            'data' => [/* ... */],
+            'success' => true
+        ]);
+
+        // Retrieve a cached response
+        $cached = $responseCache->get('api/users/index', 200);
+
+        // Check if response is cached
+        if ($responseCache->has('api/users/index', 200)) {
+            // Use cached response
+        }
+
+        // Get all responses for a route
+        $allResponses = $responseCache->getForRoute('api/users');
+
+        // Clear responses for a route
+        $responseCache->clearForRoute('api/users');
+
+        // Clear all cached responses
+        $responseCache->clearAll();
+    }
+}
+```
+
+### Storage Drivers
+
+**JSON Driver** (recommended for development/production)
+```php
+'save_responses_driver' => 'json'
+// Stores in storage/api-docs/cached-responses/
+// Persists across cache flushes
+// Better for team sharing
+```
+
+**Cache Driver** (recommended for performance)
+```php
+'save_responses_driver' => 'cache'
+// Uses your configured cache backend (redis, memcached, etc.)
+// Faster access
+// Configurable TTL per response
+```
+
+### Example Workflow
+
+1. **Enable middleware capture:**
+```php
+// config/api-inspector.php
+'middleware_capture' => true,
+```
+
+2. **Make requests to your API:**
+```bash
+curl -X GET http://localhost:8000/api/users
+curl -X POST http://localhost:8000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"name":"John","email":"john@example.com"}'
+```
+
+3. **Responses are automatically captured:**
+```
+storage/api-docs/cached-responses/
+├── api_response:api_users:200.json
+├── api_response:api_users:201.json
+└── ...
+```
+
+4. **Use captured responses in documentation:**
+- Postman collection now includes real example responses
+- OpenAPI spec contains actual response schemas
+- HTML docs show real data from your API
+
+## Configuration
 
 ## How It Works
 
@@ -289,9 +402,9 @@ composer format        # Format code with Pint
 - ✅ JSON response saving
 
 ### Phase 2 (In Progress)
-- 🔄 API Resource parsing
-- 🔄 Runtime response capture middleware
-- 🔄 Response caching
+- ✅ API Resource parsing
+- ✅ Runtime response capture middleware - Automatically capture real API responses
+- ✅ Response caching - Cache responses with both file and cache driver support
 
 ### Phase 3 (Planned)
 - 📋 Web UI dashboard (Telescope-like)
