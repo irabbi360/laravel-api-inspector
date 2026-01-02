@@ -14,12 +14,12 @@ Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(
     Route::post('api-inspector-docs/save-response', [ApiInspectorController::class, 'saveResponse'])->name('api-inspector.save-response');
     Route::get('api-inspector-docs/get-saved-responses', [ApiInspectorController::class, 'savedResponses'])->name('api-inspector.saved-responses');
     Route::delete('api-inspector-docs/delete-response', [ApiInspectorController::class, 'deleteResponse'])->name('api-inspector.delete-response');
-    
+
     // Request example routes
     Route::post('api-inspector-docs/save-request-example', [ApiInspectorController::class, 'saveRequestExample'])->name('api-inspector.save-request-example');
     Route::get('api-inspector-docs/get-request-examples', [ApiInspectorController::class, 'getRequestExamples'])->name('api-inspector.get-request-examples');
     Route::post('api-inspector-docs/delete-request-example', [ApiInspectorController::class, 'deleteRequestExample'])->name('api-inspector.delete-request-example');
-    
+
     // Dashboard analytics routes
     Route::get('api-inspector-docs/analytics', [DashboardController::class, 'getDashboardData'])->name('api-inspector.analytics');
 });
