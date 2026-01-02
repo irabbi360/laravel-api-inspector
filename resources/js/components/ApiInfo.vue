@@ -83,12 +83,14 @@ const props = defineProps({
   requestRules: {
     type: Object,
     default: null
+  },
+  parameters: {
+    type: Object,
+    default: null
   }
 })
 
 const toastVisible = ref(false)
-const toastMessage = ref('')
-const toastType = ref('success')
 
 const expandedSections = ref({
   statusCodes: false,
@@ -103,9 +105,24 @@ const generateCurlCommand = computed(() => {
   if (!props.apiInfo) return ''
   
   const method = props.apiInfo.http_method || 'GET'
-  const uri = props.apiInfo.uri || '/'
+  let uri = props.apiInfo.uri || '/'
   const baseUrl = window.location.origin
-  const fullUrl = `${baseUrl}${uri}`
+  
+  // Extract path parameters from URI
+  const pathParamMatches = uri.match(/{([^}]+)}/g) || []
+  const pathParams = {}
+  pathParamMatches.forEach((match) => {
+    const paramName = match.replace(/{|}/g, '')
+    pathParams[paramName] = `{${paramName}}`
+  })
+  
+  // Handle parameters object if provided
+  let fullUrl = `${baseUrl}${uri}`
+  if (props.parameters && typeof props.parameters === 'object') {
+    Object.keys(props.parameters).forEach((param) => {
+      fullUrl = fullUrl.replace(`{${param}}`, `{${param}}`)
+    })
+  }
   
   let curl = `curl \\\n -X ${method} \\\n`
   
@@ -113,19 +130,53 @@ const generateCurlCommand = computed(() => {
   curl += ` -H "Content-Type: application/json" \\\n`
   curl += ` -H "Accept: application/json" \\\n`
   
-  // Add URL
-  curl += ` ${fullUrl}`
+  // Add path parameters as comments if they exist
+  if (pathParamMatches.length > 0) {
+    curl += ` -H "# Path Parameters:" \\\n`
+    Object.keys(pathParams).forEach((paramName) => {
+      curl += ` -H "# ${paramName}: <value>" \\\n`
+    })
+  }
+  
+  // Add URL with path parameters
+  curl += ` "${fullUrl}"`
+  
+  // Add query parameters for GET requests
+  const queryParams = []
+  if (props.requestRules) {
+    Object.entries(props.requestRules).forEach(([name, field]) => {
+      if (method === 'GET' || method === 'DELETE') {
+        queryParams.push({
+          name: name,
+          example: field.example || ''
+        })
+      }
+    })
+  }
+  
+  // Add query parameters to URL if present
+  if (queryParams.length > 0 && (method === 'GET' || method === 'DELETE')) {
+    curl += `?`
+    queryParams.forEach((param, index) => {
+      curl += `${param.name}=${param.example || 'value'}`
+      if (index < queryParams.length - 1) {
+        curl += '&'
+      }
+    })
+  }
   
   // Add request body for methods that typically have a body
   const methodsWithBody = ['POST', 'PUT', 'PATCH']
   if (methodsWithBody.includes(method.toUpperCase())) {
     curl += ` \\\n -d '{\n`
     
-    // Generate sample request body from request rules if available
+    // Generate request body from request rules with example values
     if (props.requestRules && Object.keys(props.requestRules).length > 0) {
-      const fields = Object.keys(props.requestRules)
-      fields.forEach((field, index) => {
-        curl += `  "${field}": ""`
+      const fields = Object.entries(props.requestRules)
+      fields.forEach(([name, field], index) => {
+        const example = field.example || ''
+        const exampleStr = typeof example === 'string' ? `"${example}"` : example
+        curl += `  "${name}": ${exampleStr}`
         if (index < fields.length - 1) {
           curl += `,\n`
         } else {
@@ -135,9 +186,6 @@ const generateCurlCommand = computed(() => {
     }
     
     curl += `}'`
-  } else {
-    // For GET and other methods, just add a newline at the end
-    curl += ` \\\n`
   }
   
   return curl

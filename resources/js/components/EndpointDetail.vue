@@ -79,7 +79,11 @@
             </div>
             
             <div v-show="activeTab === 4" class="tab-content">
-                <ApiInfo :api-info="route" />
+                <ApiInfo
+                  :api-info="route"
+                  :request-rules="route.request_rules"
+                  :parameters="route.parameters"
+                />
               </div>
           </template>
         </Tabs>
