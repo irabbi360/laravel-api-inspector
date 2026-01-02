@@ -64,24 +64,24 @@ body {
 }
 
 .p-4 {
-    padding: 16px;
+    padding: 16px !important;
 }
 
 .p-6 {
-    padding: 24px;
+    padding: 24px !important;
 }
 
 .mb-4 {
-    margin-bottom: 16px;
+    margin-bottom: 16px !important;
 }
 .mb-5 {
-    margin-bottom: 20px;
+    margin-bottom: 20px !important;
 }
 .pb-5 {
     padding-bottom: 7rem !important;
 }
 .mt-4 {
-    margin-top: 16px;
+    margin-top: 16px !important;
 }
 
 /* Loading Spinner */

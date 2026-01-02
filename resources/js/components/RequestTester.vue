@@ -81,30 +81,20 @@
       </div>
 
       <div v-else class="form-fields-container">
-        <div v-for="(field, name) in requestRules" :key="name" class="form-field-group mb-0">
-          <div class="field-label justify-between">
-            <div>
-              <span class="field-name me-2">{{ name }}</span>
-              <span v-if="field.required" class="field-required">REQUIRED</span>
-              <span v-else class="field-optional">(optional)</span>
-            </div>
-            <div>
-              <span v-if="field.type" class="field-type">Type: {{ field.type }}</span>
-            </div>
+        <div v-for="(field, name) in requestRules" :key="name" class="form-field-minimal">
+          <div class="field-header-minimal">
+            <label class="field-label-minimal">
+              {{ name }}
+              <span v-if="field.required" class="badge-required">REQUIRED</span>
+            </label>
           </div>
-          <div class="field-meta-info flex">
-            <div v-if="field.description" class="field-description">
-              {{ field.description }}
-            </div>
-            <input
-              v-model="formData[name]"
-              :type="getInputType(name)"
-              :placeholder="`Enter ${name}`"
-              class="field-input"
-              @input="updateRequestBody"
-            />
-          </div>
-  
+          <input
+            v-model="formData[name]"
+            :type="getInputType(name)"
+            :placeholder="`Enter ${name}`"
+            class="input-minimal"
+            @input="updateRequestBody"
+          />
         </div>
       </div>
 
@@ -356,7 +346,7 @@ onMounted(() => {
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  padding: 20px;
+  padding: 10px;
 }
 
 .tester-tabs {
@@ -395,93 +385,59 @@ onMounted(() => {
   margin-bottom: 20px;
 }
 
-.form-group {
+.form-fields-container {
+  display: grid;
+  gap: 15px;
   margin-bottom: 20px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #3e3e42;
+.form-field-minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.form-field-group {
-  margin-bottom: 20px;
-  padding: 10px 10px 0;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-}
-
-.field-label {
+.field-header-minimal {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.field-label-minimal {
   font-weight: 600;
-  color: #3e3e42;
+  color: #333;
+  font-size: 14px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.field-name {
-  font-family: 'Courier New', monospace;
-  color: #0066cc;
-  font-weight: 700;
-}
-
-.field-required {
+.badge-required {
   display: inline-block;
   background: #ffebee;
   color: #c62828;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
-  font-size: 0.75em;
+  font-size: 0.7em;
   font-weight: 600;
-  border: 1px solid #ef5350;
+  /* border: 1px solid #ef5350; */
 }
 
-.field-optional {
-  display: inline-block;
-  color: #999;
-  font-size: 0.85em;
-  font-weight: 500;
-}
-
-.field-input {
+.input-minimal {
   width: 100%;
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   font-family: 'Courier New', monospace;
-  font-size: 0.9em;
-  margin-bottom: 8px;
+  font-size: 13px;
+  transition: border-color 0.2s;
 }
 
-.field-input:focus {
+.input-minimal:focus {
   outline: none;
   border-color: #0066cc;
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
-}
-
-.field-meta-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 8px;
-}
-
-.field-type {
-  display: block;
-  color: #999;
-  font-size: 0.85em;
-}
-
-.field-description {
-  display: block;
-  color: #666;
-  font-size: 0.85em;
 }
 
 .json-editor-container {
