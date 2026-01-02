@@ -34,7 +34,37 @@
       </div>
 
       <div v-if="useJsonEditor && hasRequestRules" class="json-editor-container">
-        <label><strong>Request Body (JSON)</strong></label>
+        <div class="json-editor-header">
+          <label><strong>Request Body (JSON)</strong></label>
+          <div class="json-editor-actions">
+            <button class="btn-small" @click="toggleExamplesPanel" title="Manage saved examples">
+              📋 {{ savedExamples.length }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Examples Panel -->
+        <div v-if="showExamplesPanel" class="saved-examples-panel">
+          <div class="saved-examples-header">
+            <h4>Saved Examples</h4>
+            <button class="btn-close" @click="toggleExamplesPanel">✕</button>
+          </div>
+          <div v-if="savedExamples.length === 0" class="no-examples">
+            No saved examples yet. Save your first example below!
+          </div>
+          <div v-else class="examples-list">
+            <div v-for="(example, index) in savedExamples" :key="index" class="example-item">
+              <div class="example-name">{{ example.name }}</div>
+              <div class="example-timestamp">{{ formatDate(example.timestamp) }}</div>
+              <div class="example-actions">
+                <button class="btn-action" @click="loadExample(example)" title="Load example">📥</button>
+                <button class="btn-action" @click="copyExample(example)" title="Copy to clipboard">📋</button>
+                <button class="btn-action btn-delete" @click="deleteExample(index)" title="Delete">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <textarea
           v-model="jsonBody"
           class="json-editor"
@@ -42,6 +72,12 @@
           placeholder="{}"
           @input="updateJsonBody($event.target.value)"
         ></textarea>
+
+        <div class="json-editor-footer">
+          <button class="btn-secondary" @click="saveExample" title="Save current JSON as example">
+            💾 Save as Example
+          </button>
+        </div>
       </div>
 
       <div v-else class="form-fields-container">
@@ -84,7 +120,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 const props = defineProps({
   requestBody: {
@@ -154,6 +190,125 @@ const updateJsonBody = (value) => {
   emit('update:requestBody', value)
 }
 
+const showExamplesPanel = ref(false)
+const savedExamples = ref([])
+
+const toggleExamplesPanel = () => {
+  showExamplesPanel.value = !showExamplesPanel.value
+  if (showExamplesPanel.value) {
+    loadSavedExamples()
+  }
+}
+
+const saveExample = async () => {
+  if (!props.route) return
+
+  const exampleName = prompt('Enter a name for this example:', 'Example ' + new Date().toLocaleTimeString())
+  if (!exampleName) return
+
+  try {
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/save-request-example`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          route_uri: props.route.uri,
+          route_method: props.route.http_method,
+          body: jsonBody.value,
+          name: exampleName
+        })
+      }
+    )
+
+    if (response.ok) {
+      alert('Example saved successfully!')
+      loadSavedExamples()
+    } else {
+      alert('Failed to save example')
+    }
+  } catch (error) {
+    console.error('Error saving example:', error)
+    alert('Error saving example')
+  }
+}
+
+const loadSavedExamples = async () => {
+  if (!props.route) return
+
+  try {
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/get-request-examples?uri=${encodeURIComponent(props.route.uri)}&method=${props.route.http_method}`,
+      {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }
+    )
+
+    if (response.ok) {
+      const data = await response.json()
+      savedExamples.value = data.examples || []
+    }
+  } catch (error) {
+    console.error('Error loading examples:', error)
+  }
+}
+
+const loadExample = (example) => {
+  jsonBody.value = example.body
+  emit('update:requestBody', example.body)
+  showExamplesPanel.value = false
+}
+
+const copyExample = (example) => {
+  navigator.clipboard.writeText(example.body)
+  alert('Example copied to clipboard!')
+}
+
+const deleteExample = async (index) => {
+  if (!props.route) return
+  if (!confirm('Are you sure you want to delete this example?')) return
+
+  try {
+    const example = savedExamples.value[index]
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/delete-request-example`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          route_uri: props.route.uri,
+          route_method: props.route.http_method,
+          index: index
+        })
+      }
+    )
+
+    if (response.ok) {
+      loadSavedExamples()
+    } else {
+      alert('Failed to delete example')
+    }
+  } catch (error) {
+    console.error('Error deleting example:', error)
+    alert('Error deleting example')
+  }
+}
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return ''
+  return new Date(timestamp).toLocaleString()
+}
+
 // Initialize formData from requestRules
 watch(
   () => props.requestRules,
@@ -177,6 +332,10 @@ watch(
   },
   { immediate: true }
 )
+
+onMounted(() => {
+  loadSavedExamples()
+})
 </script>
 
 <style scoped>
@@ -327,6 +486,166 @@ watch(
 
 .json-editor-container {
   margin-bottom: 20px;
+  position: relative;
+}
+
+.json-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.json-editor-header label {
+  display: block;
+  font-weight: 600;
+  margin: 0;
+}
+
+.json-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: #f0f0f0;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #e0e0e0;
+  border-color: #b0b0b0;
+}
+
+.saved-examples-panel {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 350px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.saved-examples-header {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.saved-examples-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.no-examples {
+  padding: 16px 12px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.examples-list {
+  max-height: 350px;
+  overflow-y: auto;
+}
+
+.example-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.example-item:last-child {
+  border-bottom: none;
+}
+
+.example-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  word-break: break-word;
+}
+
+.example-timestamp {
+  font-size: 11px;
+  color: #999;
+}
+
+.example-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-action {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-action:hover {
+  background: #e8e8e8;
+  border-color: #b0b0b0;
+}
+
+.btn-action.btn-delete:hover {
+  background: #ffebee;
+  border-color: #ef5350;
+  color: #c62828;
+}
+
+.json-editor-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+  border-color: #b0b0b0;
 }
 
 .json-editor-container label {

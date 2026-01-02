@@ -314,4 +314,200 @@ class ApiInspectorController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+
+    /**
+     * Save request body example
+     */
+    public function saveRequestExample(Request $request): JsonResponse
+    {
+        try {
+            $routeUri = $request->input('route_uri');
+            $routeMethod = $request->input('route_method');
+            $body = $request->input('body');
+            $name = $request->input('name', 'Example');
+            $timestamp = now()->toIso8601String();
+
+            if (! $routeUri || ! $routeMethod) {
+                return response()->json(['error' => 'route_uri and route_method are required'], 400);
+            }
+
+            $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+
+            if ($driver === 'json') {
+                $responsePath = config('api-inspector.response_path');
+
+                if ($storagePath === 'local') {
+                    $responsePath = public_path($responsePath);
+                } else {
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
+                @mkdir($responsePath.'/examples', 0755, true);
+                $fileName = md5($routeMethod.':'.$routeUri).'.json';
+                $filePath = $responsePath.'/examples/'.$fileName;
+
+                $examples = [];
+                if (file_exists($filePath)) {
+                    $examples = json_decode(file_get_contents($filePath), true) ?? [];
+                }
+
+                $examples[] = [
+                    'name' => $name,
+                    'body' => $body,
+                    'timestamp' => $timestamp,
+                ];
+
+                file_put_contents($filePath, json_encode($examples, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+                return response()->json([
+                    'message' => 'Example saved successfully',
+                    'uri' => $routeUri,
+                    'method' => $routeMethod,
+                ]);
+            } else {
+                $cacheKey = 'api-inspector-example:'.md5($routeMethod.':'.$routeUri);
+                $examples = Cache::get($cacheKey, []);
+
+                $examples[] = [
+                    'name' => $name,
+                    'body' => $body,
+                    'timestamp' => $timestamp,
+                ];
+
+                Cache::put($cacheKey, $examples, now()->addDays(30));
+
+                return response()->json([
+                    'message' => 'Example saved successfully',
+                    'uri' => $routeUri,
+                    'method' => $routeMethod,
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Get saved request examples
+     */
+    public function getRequestExamples(Request $request): JsonResponse
+    {
+        try {
+            $routeUri = $request->query('uri');
+            $routeMethod = $request->query('method');
+
+            if (! $routeUri || ! $routeMethod) {
+                return response()->json(['error' => 'uri and method query parameters are required'], 400);
+            }
+
+            $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+            $examples = [];
+
+            if ($driver === 'json') {
+                $responsePath = config('api-inspector.response_path');
+
+                if ($storagePath === 'local') {
+                    $responsePath = public_path($responsePath);
+                } else {
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
+                $fileName = md5($routeMethod.':'.$routeUri).'.json';
+                $filePath = $responsePath.'/examples/'.$fileName;
+
+                if (file_exists($filePath)) {
+                    $examples = json_decode(file_get_contents($filePath), true) ?? [];
+                }
+            } else {
+                $cacheKey = 'api-inspector-example:'.md5($routeMethod.':'.$routeUri);
+                $examples = Cache::get($cacheKey, []);
+            }
+
+            return response()->json([
+                'uri' => $routeUri,
+                'method' => $routeMethod,
+                'examples' => $examples,
+                'count' => count($examples),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    /**
+     * Delete a saved request example
+     */
+    public function deleteRequestExample(Request $request): JsonResponse
+    {
+        try {
+            $routeUri = $request->input('route_uri');
+            $routeMethod = $request->input('route_method');
+            $index = $request->input('index');
+
+            if (! $routeUri || ! $routeMethod || $index === null) {
+                return response()->json(['error' => 'route_uri, route_method, and index are required'], 400);
+            }
+
+            $driver = config('api-inspector.save_responses_driver', 'cache');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+
+            if ($driver === 'json') {
+                $responsePath = config('api-inspector.response_path');
+
+                if ($storagePath === 'local') {
+                    $responsePath = public_path($responsePath);
+                } else {
+                    $responsePath = storage_path("app/public/{$responsePath}");
+                }
+
+                $fileName = md5($routeMethod.':'.$routeUri).'.json';
+                $filePath = $responsePath.'/examples/'.$fileName;
+
+                if (file_exists($filePath)) {
+                    $examples = json_decode(file_get_contents($filePath), true) ?? [];
+
+                    if (isset($examples[$index])) {
+                        unset($examples[$index]);
+                        $examples = array_values($examples);
+
+                        file_put_contents($filePath, json_encode($examples, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+
+                        return response()->json([
+                            'message' => 'Example deleted successfully',
+                            'uri' => $routeUri,
+                            'method' => $routeMethod,
+                            'index' => $index,
+                        ]);
+                    }
+
+                    return response()->json(['error' => 'Example index not found'], 404);
+                }
+
+                return response()->json(['error' => 'No saved examples found for this route'], 404);
+            } else {
+                $cacheKey = 'api-inspector-example:'.md5($routeMethod.':'.$routeUri);
+                $examples = Cache::get($cacheKey, []);
+
+                if (isset($examples[$index])) {
+                    unset($examples[$index]);
+                    $examples = array_values($examples);
+
+                    Cache::put($cacheKey, $examples, now()->addDays(30));
+
+                    return response()->json([
+                        'message' => 'Example deleted successfully',
+                        'uri' => $routeUri,
+                        'method' => $routeMethod,
+                        'index' => $index,
+                    ]);
+                }
+
+                return response()->json(['error' => 'Example index not found'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
 }
