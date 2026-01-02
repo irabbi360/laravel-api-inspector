@@ -550,18 +550,86 @@ A beautiful, responsive documentation site with:
 
 ## Validation Rules Mapping
 
-| Laravel Rule | Generated Type | Format |
-|---|---|---|
-| `email` | string | email |
-| `date` | string | date |
-| `url` | string | uri |
-| `numeric` | integer | - |
-| `boolean` | boolean | - |
-| `array` | array | - |
-| `file` | string | binary |
-| `image` | string | binary |
-| `min:N` | - | minLength: N |
-| `max:N` | - | maxLength: N |
+| Laravel Rule | Generated Type | Format | Notes |
+|---|---|---|---|
+| `email` | string | email | - |
+| `date` | string | date | - |
+| `url` | string | uri | - |
+| `numeric` | integer | - | - |
+| `integer` | integer | - | - |
+| `boolean` | boolean | - | - |
+| `array` | array | - | - |
+| `file` | string | binary | - |
+| `image` | string | binary | - |
+| `min:N` | - | minLength: N | Works with strings, numbers, arrays |
+| `max:N` | - | maxLength: N | Works with strings, numbers, arrays |
+| `size:N` | - | - | Exact size for strings/numbers/arrays |
+| `regex:PATTERN` | string | - | Regex pattern validation |
+| `in:val1,val2,...` | - | enum | Creates enum values |
+| `confirmed` | - | - | Requires `{field}_confirmation` field |
+| `same:field` | - | - | Must match another field's value |
+| `different:field` | - | - | Must be different from another field |
+| `in_array:field.*` | - | - | Values must be in another field's array |
+| `before:field` | date | - | Must be before another field/date |
+| `after:field` | date | - | Must be after another field/date |
+| `before_or_equal:field` | date | - | Must be ≤ another field/date |
+| `after_or_equal:field` | date | - | Must be ≥ another field/date |
+| `required` | - | - | Field is required |
+| `nullable` | - | - | Field can be null |
+| `json` | - | json | - |
+| `uuid` | string | uuid | - |
+| `ipv4` | string | ipv4 | - |
+| `ipv6` | string | ipv6 | - |
+
+### Relational Validation Rules
+
+When using relational rules like `confirmed`, `same`, `different`, etc., the generated documentation includes metadata about the relationship:
+
+```php
+'password' => ['required', 'string', 'min:8', 'confirmed']
+```
+
+Generated schema:
+```json
+{
+  "password": {
+    "name": "password",
+    "required": true,
+    "type": "string",
+    "min": 8,
+    "confirmed": true,
+    "requires_field": "password_confirmation",
+    "description": "Password (must match password_confirmation)"
+  }
+}
+```
+
+### Example: Complex Validation Rules
+
+Here's a real-world example with multiple relational validation rules:
+
+```php
+// In your FormRequest class
+public function rules(): array
+{
+    return [
+        'email' => ['required', 'email'],
+        'token' => ['required', 'string'],
+        'password' => ['required', 'string', 'min:8', 'confirmed'],
+        'password_confirmation' => ['required', 'same:password'],
+        'start_date' => ['required', 'date', 'before:end_date'],
+        'end_date' => ['required', 'date', 'after:start_date'],
+        'status' => ['required', 'in:active,inactive,pending'],
+    ];
+}
+```
+
+Generated documentation will include:
+- ✅ `password` field with `requires_field: password_confirmation`
+- ✅ `password_confirmation` field with `same_as: password`
+- ✅ `start_date` field with relationship to `end_date`
+- ✅ `end_date` field with relationship to `start_date`
+- ✅ `status` field with enum values: `['active', 'inactive', 'pending']`
 
 ## Testing
 

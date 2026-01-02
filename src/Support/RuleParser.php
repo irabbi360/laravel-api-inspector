@@ -22,6 +22,9 @@ class RuleParser
             $schema[$fieldName] = self::parseFieldRule($fieldName, $ruleString);
         }
 
+        // Add dependent fields that are required by relational rules
+        $schema = self::addDependentFields($schema);
+
         return $schema;
     }
 
@@ -63,10 +66,16 @@ class RuleParser
             'example' => TypeInferer::inferExample($fieldName, self::inferType($rules)),
         ];
 
-        // Add constraints
+        // Add constraints (min, max, size, pattern, enum)
         $constraints = TypeInferer::extractConstraints($ruleString);
         if (! empty($constraints)) {
             $field = array_merge($field, $constraints);
+        }
+
+        // Add relational rule information (confirmed, same, different, before, after, etc.)
+        $relational = TypeInferer::extractRelationalRules($ruleString, $fieldName);
+        if (! empty($relational)) {
+            $field = array_merge($field, $relational);
         }
 
         // Add format if applicable
@@ -75,8 +84,12 @@ class RuleParser
             $field['format'] = $format;
         }
 
-        // Add description from field name
-        $field['description'] = self::generateDescription($fieldName);
+        // Add description from field name (with relational info if available)
+        $description = self::generateDescription($fieldName);
+        if (isset($relational['description_suffix'])) {
+            $description .= ' '.$relational['description_suffix'];
+        }
+        $field['description'] = $description;
 
         return $field;
     }
@@ -115,6 +128,66 @@ class RuleParser
         }
 
         return null;
+    }
+
+    /**
+     * Add dependent fields that are required by relational rules
+     * For example, if password has 'confirmed' rule, add password_confirmation field
+     *
+     * @param  array<string, array>  $schema
+     * @return array<string, array>
+     */
+    private static function addDependentFields(array $schema): array
+    {
+        $fieldsToAdd = [];
+
+        // Check each field for relational rules that require other fields
+        foreach ($schema as $fieldName => $fieldData) {
+            // Handle 'confirmed' rule - requires {field}_confirmation
+            if (isset($fieldData['confirmed']) && $fieldData['confirmed']) {
+                $confirmationField = $fieldData['requires_field'] ?? $fieldName.'_confirmation';
+                if (! isset($schema[$confirmationField])) {
+                    $fieldsToAdd[$confirmationField] = [
+                        'name' => $confirmationField,
+                        'required' => true,
+                        'type' => $fieldData['type'] ?? 'string',
+                        'example' => $fieldData['example'] ?? '',
+                        'description' => 'Confirmation of '.$fieldName,
+                    ];
+                }
+            }
+
+            // Handle 'same:field' rule - the target field must exist
+            if (isset($fieldData['same_as'])) {
+                $targetField = $fieldData['same_as'];
+                if (! isset($schema[$targetField]) && ! isset($fieldsToAdd[$targetField])) {
+                    $fieldsToAdd[$targetField] = [
+                        'name' => $targetField,
+                        'required' => true,
+                        'type' => 'string',
+                        'example' => '',
+                        'description' => 'Target field for '.$fieldName,
+                    ];
+                }
+            }
+
+            // Handle 'different:field' rule - the target field must exist
+            if (isset($fieldData['different_from'])) {
+                $targetField = $fieldData['different_from'];
+                if (! isset($schema[$targetField]) && ! isset($fieldsToAdd[$targetField])) {
+                    $fieldsToAdd[$targetField] = [
+                        'name' => $targetField,
+                        'required' => true,
+                        'type' => 'string',
+                        'example' => '',
+                        'description' => 'Target field for '.$fieldName,
+                    ];
+                }
+            }
+        }
+
+        // Merge added fields into schema
+        return array_merge($schema, $fieldsToAdd);
     }
 
     /**
