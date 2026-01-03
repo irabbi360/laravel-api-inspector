@@ -39,6 +39,14 @@
             <span class="auth-status-dot"></span>
             {{ authToken ? 'Authenticated' : 'No token' }}
           </div>
+          <button
+            v-if="authToken"
+            class="btn-logout"
+            @click="handleLogout"
+            title="Logout / Clear token"
+          >
+            Logout
+          </button>
         </div>
         <div v-if="loading" class="loading-spinner"></div>
         <button v-else @click="$emit('refresh')" class="btn btn-refresh">
@@ -98,6 +106,10 @@ const activeMenuId = ref(null)
 const handleMenuClick = (item) => {
   activeMenuId.value = item.id
   emit('menu-click', item)
+}
+
+const handleLogout = () => {
+  emit('update:authToken', '')
 }
 </script>
 
@@ -286,6 +298,31 @@ const handleMenuClick = (item) => {
   background: #49cc90;
 }
 
+.btn-logout {
+  background: #f93e3e;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background 0.2s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-logout:hover {
+  background: #d92e2e;
+  transform: scale(1.05);
+}
+
+.btn-logout:active {
+  transform: scale(0.98);
+}
+
 .btn {
   background: #0066cc;
   color: white;
@@ -418,6 +455,11 @@ const handleMenuClick = (item) => {
     padding: 6px 10px;
   }
 
+  .btn-logout {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
   .btn {
     padding: 8px 15px;
     font-size: 12px;
@@ -521,6 +563,11 @@ const handleMenuClick = (item) => {
   }
 
   .auth-status {
+    font-size: 10px;
+  }
+
+  .btn-logout {
+    padding: 6px 10px;
     font-size: 10px;
   }
 

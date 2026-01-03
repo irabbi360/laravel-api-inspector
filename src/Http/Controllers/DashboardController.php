@@ -94,8 +94,8 @@ class DashboardController
                     'method' => $route->method,
                     'count' => $route->count,
                     'avg_duration' => $route->avg_duration,
-                    'min' => $route->min,
-                    'max' => $route->max,
+                    'min' => round($route->min),
+                    'max' => round($route->max),
                     'status_code' => $route->status_code,
                     'errorRate' => $errorRate,
                 ];
