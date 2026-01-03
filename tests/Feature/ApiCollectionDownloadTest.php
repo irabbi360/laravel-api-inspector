@@ -9,7 +9,7 @@ class ApiCollectionDownloadTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+
         // Register test routes
         Route::get('/api/test-endpoint', function () {
             return response()->json(['message' => 'success']);
@@ -63,7 +63,7 @@ class ApiCollectionDownloadTest extends TestCase
     {
         // Delete any existing files
         $docsPath = config('api-inspector.response_path') ?? storage_path('api-docs');
-        if (!is_dir($docsPath)) {
+        if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
         $file = "$docsPath/postman_collection.json";
@@ -76,7 +76,7 @@ class ApiCollectionDownloadTest extends TestCase
 
         // Check response is not null
         $this->assertNotNull($response);
-        
+
         // File should now exist
         $this->assertTrue(file_exists($file), 'Postman collection should be auto-generated');
     }
@@ -88,7 +88,7 @@ class ApiCollectionDownloadTest extends TestCase
     {
         // Delete any existing files
         $docsPath = config('api-inspector.response_path') ?? storage_path('api-docs');
-        if (!is_dir($docsPath)) {
+        if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
         $file = "$docsPath/openapi.json";
@@ -101,7 +101,7 @@ class ApiCollectionDownloadTest extends TestCase
 
         // Check response is not null
         $this->assertNotNull($response);
-        
+
         // File should now exist
         $this->assertTrue(file_exists($file), 'OpenAPI spec should be auto-generated');
     }

@@ -99,15 +99,15 @@ class ApiInspectorController extends Controller
             // Generate Postman collection
             $generator = new PostmanGenerator(
                 $routes,
-                config('app.name') . ' API',
+                config('app.name').' API',
                 config('app.url') ?? 'https://api.example.com'
             );
 
             $collection = $generator->generate();
 
             // Save to file
-            $fileWriter = new JsonFileWriter();
-            
+            $fileWriter = new JsonFileWriter;
+
             if ($storagePath === 'local') {
                 $outputPath = public_path($outputPath);
             } else {
@@ -116,7 +116,7 @@ class ApiInspectorController extends Controller
             $filePath = "$outputPath/postman_collection.json";
             file_put_contents($filePath, json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } catch (\Exception $e) {
-            \Log::error('Failed to generate Postman collection: ' . $e->getMessage());
+            \Log::error('Failed to generate Postman collection: '.$e->getMessage());
         }
     }
 
@@ -164,7 +164,7 @@ class ApiInspectorController extends Controller
             // Generate OpenAPI spec
             $generator = new OpenApiGenerator(
                 $routes,
-                config('app.name') . ' API',
+                config('app.name').' API',
                 config('app.version', '1.0.0'),
                 config('app.url') ?? 'https://api.example.com'
             );
@@ -175,7 +175,7 @@ class ApiInspectorController extends Controller
             $filePath = "$outputPath/openapi.json";
             file_put_contents($filePath, json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
         } catch (\Exception $e) {
-            \Log::error('Failed to generate OpenAPI specification: ' . $e->getMessage());
+            \Log::error('Failed to generate OpenAPI specification: '.$e->getMessage());
         }
     }
 
