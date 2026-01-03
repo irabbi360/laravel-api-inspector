@@ -52,6 +52,12 @@
         <button v-else @click="$emit('refresh')" class="btn btn-refresh">
           ↻ Refresh
         </button>
+        <button @click="downloadPostman" class="btn btn-postman" title="Download Postman Collection">
+          📮 Postman
+        </button>
+        <button @click="downloadOpenApi" class="btn btn-openapi" title="Download OpenAPI Specification">
+          📋 OpenAPI
+        </button>
         <a
           href="https://github.com/irabbi360/laravel-api-inspector/issues/new"
           target="_blank"
@@ -110,6 +116,54 @@ const handleMenuClick = (item) => {
 
 const handleLogout = () => {
   emit('update:authToken', '')
+}
+
+const downloadPostman = async () => {
+  try {
+    const apiPath = '/api/api-inspector-docs/postman';
+    
+    const response = await fetch(apiPath)
+    if (!response.ok) {
+      throw new Error('Failed to download Postman collection')
+    }
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'postman_collection.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error downloading Postman collection:', error)
+    alert('Failed to download Postman collection')
+  }
+}
+
+const downloadOpenApi = async () => {
+  try {
+    const apiPath = '/api/api-inspector-docs/openapi';
+    
+    const response = await fetch(apiPath)
+    if (!response.ok) {
+      throw new Error('Failed to download OpenAPI specification')
+    }
+    
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'openapi.json'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Error downloading OpenAPI specification:', error)
+    alert('Failed to download OpenAPI specification')
+  }
 }
 </script>
 
@@ -356,6 +410,22 @@ const handleLogout = () => {
 .btn-feature {
   background: #389f71;
   text-decoration: none;
+}
+
+.btn-postman {
+  background: #ff6c37;
+}
+
+.btn-postman:hover {
+  opacity: 0.9;
+}
+
+.btn-openapi {
+  background: #008c45;
+}
+
+.btn-openapi:hover {
+  opacity: 0.9;
 }
 
 .loading-spinner {

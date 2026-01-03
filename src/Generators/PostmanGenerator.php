@@ -25,7 +25,7 @@ class PostmanGenerator
         return [
             'info' => [
                 'name' => $this->name,
-                'description' => 'Auto-generated API documentation',
+                'description' => 'Auto-generated ' . config('api-inspector.title') . ' Postman collection',
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             ],
             'item' => $this->generateItems(),
