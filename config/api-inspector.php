@@ -3,7 +3,7 @@
 // config for Irabbi360/LaravelApiInspector
 return [
     // changes doc title
-    'title' => 'LAPI - Laravel API Inspector',
+    'title' => 'Laravel API Inspector',
     'enabled' => true,
 
     /*
