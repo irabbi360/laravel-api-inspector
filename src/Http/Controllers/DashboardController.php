@@ -9,10 +9,8 @@ use Irabbi360\LaravelApiInspector\Services\DashboardStatsService;
 
 class DashboardController
 {
-
     /**
      * Constructor
-     * @param DashboardStatsService $service
      */
     public function __construct(private DashboardStatsService $service) {}
 
