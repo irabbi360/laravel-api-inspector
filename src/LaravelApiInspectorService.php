@@ -466,39 +466,43 @@ class LaravelApiInspectorService
     {
         try {
             $controllerName = $route->getActionName();
-            if (! $controllerName || $controllerName === 'Closure') {
+            if (!$controllerName || $controllerName === 'Closure') {
                 return null;
             }
 
             // Parse controller@method format
-            if (! str_contains($controllerName, '@')) {
+            if (!str_contains($controllerName, '@')) {
                 return null;
             }
 
             [$controller, $method] = explode('@', $controllerName);
 
-            if (! class_exists($controller)) {
+            if (!class_exists($controller)) {
                 return null;
             }
 
             $reflection = new \ReflectionClass($controller);
-            if (! $reflection->hasMethod($method)) {
+            if (!$reflection->hasMethod($method)) {
                 return null;
             }
 
             $controllerMethod = $reflection->getMethod($method);
 
+            // Check if this route uses pagination
+            $hasPagination = $this->hasPaginationAnnotation($controllerMethod);
+
             // First, check for @LAPIresponsesSchema annotation
             $resourceClass = $this->extractResourceFromDocBlock($controllerMethod);
 
             if ($resourceClass) {
-                return $this->extractResourceSchemaRecursively($resourceClass);
+                $schema = $this->extractResourceSchemaRecursively($resourceClass);
+                return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
             // Fallback: check return type
             $returnType = $controllerMethod->getReturnType();
 
-            if (! $returnType) {
+            if (!$returnType) {
                 return null;
             }
 
@@ -511,13 +515,84 @@ class LaravelApiInspectorService
             // Check if it's an Illuminate\Http\Resources\Json\JsonResource
             if ($resolvedReturnType && class_exists($resolvedReturnType) && is_subclass_of($resolvedReturnType, \Illuminate\Http\Resources\Json\JsonResource::class)) {
                 // Extract resource schema recursively
-                return $this->extractResourceSchemaRecursively($resolvedReturnType);
+                $schema = $this->extractResourceSchemaRecursively($resolvedReturnType);
+                return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
             return null;
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Wrap resource schema with Laravel pagination structure
+
+    /**
+     * Wrap resource schema with Laravel pagination metadata
+     */
+    private function wrapWithPaginationSchema(?array $schema): ?array
+    {
+        if (!$schema) {
+            return null;
+        }
+
+        // Get pagination schema from config
+        $paginationSchema = config('api-inspector.pagination_schema', [
+            'data' => 'array',
+            'links' => [
+                'first' => 'string',
+                'last' => 'string',
+                'prev' => 'string | null',
+                'next' => 'string | null',
+            ],
+            'meta' => [
+                'current_page' => 'integer',
+                'from' => 'integer | null',
+                'last_page' => 'integer',
+                'path' => 'string',
+                'per_page' => 'integer',
+                'to' => 'integer | null',
+                'total' => 'integer',
+                'links' => 'array',
+            ],
+        ]);
+
+        // Get which pagination sections to show
+        $showPagination = config('api-inspector.pagination_schema.show_pagination', ['links', 'meta']);
+
+        // Build the schema based on show_pagination config
+        $paginatedSchema = [
+            'resource_class' => $schema['resource_class'] ?? 'Paginated',
+            'resource_type' => 'paginated_collection',
+            'schema' => [],
+        ];
+
+        $paginatedSchema['schema']['data'] = $schema['schema'] ?? [];
+        // Add sections based on show_pagination config
+        if (in_array('links', $showPagination) && isset($paginationSchema['links'])) {
+            $paginatedSchema['schema']['links'] = $paginationSchema['links'];
+        }
+
+        if (in_array('meta', $showPagination) && isset($paginationSchema['meta'])) {
+            $paginatedSchema['schema']['meta'] = $paginationSchema['meta'];
+        }
+
+        return $paginatedSchema;
+    }
+
+    /**
+     * Extract pagination flag from DocBlock annotation
+     */
+    private function hasPaginationAnnotation(ReflectionMethod $method): bool
+    {
+        $docComment = $method->getDocComment();
+
+        if (!$docComment) {
+            return false;
+        }
+
+        return preg_match('/@LAPIpagination/', $docComment) === 1;
     }
 
     /**

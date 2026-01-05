@@ -81,7 +81,36 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Phase 3: Analytics, Dashboard, and Advanced Features
+    | Pagination Schema
+    |--------------------------------------------------------------------------
+    | Define the structure of pagination metadata when @LAPIpagination is used.
+    | Matches Laravel's default pagination response structure.
+    |
+    */
+    'pagination_schema' => [
+        'data' => 'array',
+        'links' => [
+            'first' => 'string',
+            'last' => 'string',
+            'prev' => 'string | null',
+            'next' => 'string | null',
+        ],
+        'meta' => [
+            'current_page' => 'integer',
+            'from' => 'integer | null',
+            'last_page' => 'integer',
+            'path' => 'string',
+            'per_page' => 'integer',
+            'to' => 'integer | null',
+            'total' => 'integer',
+            'links' => 'array',
+        ],
+        'show_pagination' => ['links', 'meta'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Analytics, Dashboard, and Advanced Features
     |--------------------------------------------------------------------------
     */
 
