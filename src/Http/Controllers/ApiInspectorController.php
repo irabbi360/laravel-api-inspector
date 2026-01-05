@@ -6,12 +6,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
-use Irabbi360\LaravelApiInspector\Extractors\RouteExtractor;
 use Irabbi360\LaravelApiInspector\Facades\LaravelApiInspector;
 use Irabbi360\LaravelApiInspector\Generators\OpenApiGenerator;
 use Irabbi360\LaravelApiInspector\Generators\PostmanGenerator;
 use Irabbi360\LaravelApiInspector\LaravelApiInspectorService;
-use Irabbi360\LaravelApiInspector\Writers\JsonFileWriter;
 
 class ApiInspectorController extends Controller
 {
@@ -30,6 +28,7 @@ class ApiInspectorController extends Controller
                 'path' => config('api-inspector.route_path', '/api-docs'),
                 'route_path' => config('api-inspector.route_path', 'api-docs'),
                 'api_path' => 'api',
+                'root_path' => \Request::root()
             ],
         ]);
     }
@@ -56,17 +55,22 @@ class ApiInspectorController extends Controller
     /**
      * Display Postman collection JSON
      */
-    public function postman(Request $request)
+    public function postman(?Request $request = null)
     {
         try {
-            $docsPath = config('api-inspector.response_path');
+            $responsePath = config('api-inspector.response_path');
             $storagePath = config('api-inspector.storage_path', 'storage');
+
+            // Build absolute path to docs directory
+            if ($storagePath === 'local') {
+                $docsPath = public_path($responsePath);
+            } else {
+                $docsPath = storage_path("app/public/{$responsePath}");
+            }
+
             $file = "$docsPath/postman_collection.json";
 
-            // If file doesn't exist, generate it
-            // if (! file_exists($file)) {
-            $this->generatePostmanCollection($docsPath, $storagePath, $request);
-            // }
+            $this->generatePostmanCollection($responsePath, $storagePath, $request);
 
             if (! file_exists($file)) {
                 return response()->json(['error' => 'Failed to generate Postman collection'], 500);
@@ -84,7 +88,7 @@ class ApiInspectorController extends Controller
     /**
      * Generate Postman collection
      */
-    protected function generatePostmanCollection(string $outputPath, string $storagePath, Request $request): void
+    protected function generatePostmanCollection(string $outputPath, string $storagePath, ?Request $request = null): void
     {
         try {
             // Create directory if it doesn't exist
@@ -92,8 +96,6 @@ class ApiInspectorController extends Controller
                 mkdir($outputPath, 0755, true);
             }
 
-            // Extract routes
-            // $routes = RouteExtractor::extract();
             [$routes] = $this->service->apiListData($request);
 
             // Generate Postman collection
@@ -106,8 +108,6 @@ class ApiInspectorController extends Controller
             $collection = $generator->generate();
 
             // Save to file
-            $fileWriter = new JsonFileWriter;
-
             if ($storagePath === 'local') {
                 $outputPath = public_path($outputPath);
             } else {
@@ -123,16 +123,22 @@ class ApiInspectorController extends Controller
     /**
      * Display OpenAPI specification
      */
-    public function openapi()
+    public function openapi(?Request $request = null)
     {
         try {
-            $docsPath = config('api-inspector.response_path') ?? storage_path('api-docs');
+            $responsePath = config('api-inspector.response_path');
+            $storagePath = config('api-inspector.storage_path', 'storage');
+
+            // Build absolute path to docs directory
+            if ($storagePath === 'local') {
+                $docsPath = public_path($responsePath);
+            } else {
+                $docsPath = storage_path("app/public/{$responsePath}");
+            }
+
             $file = "$docsPath/openapi.json";
 
-            // If file doesn't exist, generate it
-            if (! file_exists($file)) {
-                $this->generateOpenApiSpec($docsPath);
-            }
+            $this->generateOpenApiSpec($responsePath, $storagePath, $request);
 
             if (! file_exists($file)) {
                 return response()->json(['error' => 'Failed to generate OpenAPI specification'], 500);
@@ -150,22 +156,29 @@ class ApiInspectorController extends Controller
     /**
      * Generate OpenAPI specification
      */
-    protected function generateOpenApiSpec(string $outputPath): void
+    protected function generateOpenApiSpec(string $responsePath, string $storagePath, ?Request $request = null): void
     {
         try {
+            // Build absolute path
+            if ($storagePath === 'local') {
+                $outputPath = public_path($responsePath);
+            } else {
+                $outputPath = storage_path("app/public/{$responsePath}");
+            }
+
             // Create directory if it doesn't exist
             if (! is_dir($outputPath)) {
                 mkdir($outputPath, 0755, true);
             }
 
-            // Extract routes
-            $routes = RouteExtractor::extract();
+            // Extract full routes with all metadata (parameters, request rules, responses)
+            [$routes] = $this->service->apiListData($request);
 
-            // Generate OpenAPI spec
+            // Generate OpenAPI specification
             $generator = new OpenApiGenerator(
                 $routes,
                 config('app.name').' API',
-                config('app.version', '1.0.0'),
+                '1.0.0',
                 config('app.url') ?? 'https://api.example.com'
             );
 

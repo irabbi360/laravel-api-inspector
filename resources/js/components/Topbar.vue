@@ -53,10 +53,10 @@
           ↻ Refresh
         </button>
         <button @click="downloadPostman" class="btn btn-postman" title="Download Postman Collection">
-          📮 Postman
+          Postman
         </button>
         <button @click="downloadOpenApi" class="btn btn-openapi" title="Download OpenAPI Specification">
-          📋 OpenAPI
+          OpenAPI
         </button>
         <a
           href="https://github.com/irabbi360/laravel-api-inspector/issues/new"

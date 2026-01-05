@@ -104,7 +104,7 @@ return [
 
     'dashboard' => [
         'enabled' => true,
-        'path' => 'api-inspector/dashboard', // URL path for dashboard
+        'path' => 'api-inspector/stats', // URL path for dashboard
         'auth_middleware' => ['web'], // Middleware for dashboard protection
     ],
 

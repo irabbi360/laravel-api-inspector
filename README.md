@@ -49,12 +49,6 @@ After generating documentation, visit:
 http://localhost:8000/api-docs
 ```
 
-You'll see a beautiful HTML documentation page with all your API endpoints!
-
-You can also access:
-- **Postman Collection**: `http://localhost:8000/api-docs/postman` (download)
-- **OpenAPI Spec**: `http://localhost:8000/api-docs/openapi` (download)
-
 ### Create a FormRequest with Validation Rules
 
 ```php
@@ -100,6 +94,29 @@ class UserController extends Controller
 }
 ```
 
+### Use Actions in Your Controller
+
+```php
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Actions\CreateUser;
+
+class UserController extends Controller
+{
+    public function store(Request $request, CreateUser $action)
+    {
+        $action->create($request->all());
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'User created successfully',
+        ], 201);
+    }
+}
+```
+
 ### Auto Response Schema generate. You can now add the annotation to your controller methods:
 
 ```php
@@ -140,13 +157,12 @@ http://localhost:8000/api-docs
 
 That's it! 🎉 Your API is now documented and accessible via browser.
 
-## Generated Output Files
+## Generate or Download API Collection
 
 The command generates documentation in three formats:
 
-- **HTML Docs** - `http://localhost:8000/api-docs` (view in browser)
-- **Postman Collection** - `http://localhost:8000/api-docs/postman` (download for Postman)
-- **OpenAPI Spec** - `http://localhost:8000/api-docs/openapi` (use with Swagger UI, etc.)
+- **API Stats** - `http://localhost:8000/api-docs/stats` (view in browser)
+From `Stats` page download the Postman API Collections & OpenAPI Specification
 
 Files are also saved to `storage/api-docs/` directory for backup.
 
@@ -157,12 +173,6 @@ Edit `config/api-inspector.php`:
 ```php
 return [
     'enabled' => true,
-
-    'output' => [
-        'openapi' => true,    // Generate OpenAPI spec
-        'postman' => true,    // Generate Postman collection
-        'html' => true,       // Generate HTML documentation
-    ],
 
     'save_responses' => true,        // Save example responses to JSON
 
@@ -181,7 +191,7 @@ return [
 ];
 ```
 
-## Phase 2: Runtime Response Capture & Caching
+## Runtime Response Capture & Caching
 
 ### Middleware Response Capture
 
@@ -302,6 +312,7 @@ Automatically track and monitor API performance:
     'track_memory_usage' => true,
     'track_errors' => true,
     'retention_days' => 30,
+    'track_only_uri_start_with' => 'api/',
 ]
 ```
 
@@ -315,7 +326,7 @@ Automatically track and monitor API performance:
 
 ### Web UI Dashboard
 
-Access the Telescope-like dashboard at `/api-inspector/dashboard`:
+Access the Telescope-like dashboard at `/api-inspector/stats`:
 
 **Dashboard Includes:**
 - Real-time request metrics
@@ -330,38 +341,9 @@ Access the Telescope-like dashboard at `/api-inspector/dashboard`:
 ```php
 'dashboard' => [
     'enabled' => true,
-    'path' => 'api-inspector/dashboard',
+    'path' => 'api-inspector/stats',
     'auth_middleware' => ['web'], // Protect dashboard access
 ]
-```
-
-### Advanced Authentication Testing
-
-Test different authentication schemes directly from the dashboard:
-
-```php
-'auth_testing' => [
-    'enabled' => true,
-    'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
-    'test_endpoint_prefix' => '/api/',
-]
-```
-
-**Supported Schemes:**
-- Bearer Token
-- API Key
-- Basic Authentication
-- OAuth 2.0
-
-**Test Authentication:**
-```javascript
-// From dashboard or API
-POST /api-inspector/api/test-auth
-{
-    "type": "bearer",
-    "endpoint": "/api/users",
-    "token": "your-token"
-}
 ```
 
 ### Webhook Documentation Support
@@ -434,42 +416,6 @@ $errors = ApiAnalytic::errors()->get();
 // Get slow requests
 $slow = ApiAnalytic::slow(500)->get(); // Over 500ms
 ```
-
-### Configuration
-
-Edit `config/api-inspector.php`:
-
-```php
-return [
-    // ... existing config ...
-
-    'analytics' => [
-        'enabled' => true,
-        'track_response_time' => true,
-        'track_memory_usage' => true,
-        'track_errors' => true,
-        'retention_days' => 30,
-    ],
-
-    'dashboard' => [
-        'enabled' => true,
-        'path' => 'api-inspector/dashboard',
-        'auth_middleware' => ['web'],
-    ],
-
-    'auth_testing' => [
-        'enabled' => true,
-        'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
-        'test_endpoint_prefix' => '/api/',
-    ],
-
-    'webhooks' => [
-        // Define your webhooks here
-    ],
-];
-```
-
-## Configuration
 
 ## How It Works
 
@@ -639,27 +585,6 @@ composer test-coverage # With code coverage
 composer analyse       # PHPStan static analysis
 composer format        # Format code with Pint
 ```
-
-## Roadmap
-
-### Phase 1 (Completed ✅)
-- ✅ Route scanning
-- ✅ FormRequest rule extraction
-- ✅ Postman collection generation
-- ✅ OpenAPI specification generation
-- ✅ HTML documentation generation
-- ✅ JSON response saving
-
-### Phase 2 (In Progress)
-- ✅ API Resource parsing
-- ✅ Runtime response capture middleware - Automatically capture real API responses
-- ✅ Response caching - Cache responses with both file and cache driver support
-
-### Phase 3 (Completed ✅)
-- ✅ Web UI dashboard (Telescope-like) - Real-time analytics and monitoring
-- ✅ Advanced authentication testing - Multiple auth schemes support
-- ✅ Webhook documentation support - Document and manage webhooks
-- ✅ API analytics and monitoring - Track requests, response times, errors
 
 ## Troubleshooting
 

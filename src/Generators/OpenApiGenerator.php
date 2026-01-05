@@ -56,7 +56,7 @@ class OpenApiGenerator
 
         foreach ($this->routes as $route) {
             $path = $route['uri'];
-            $method = strtolower($route['method']);
+            $method = strtolower($route['http_method'] ?? $route['method'] ?? 'GET');
 
             if (! isset($paths[$path])) {
                 $paths[$path] = [];
@@ -73,6 +73,8 @@ class OpenApiGenerator
      */
     protected function generateOperation(array $route): array
     {
+        $method = $route['http_method'] ?? $route['method'] ?? 'GET';
+        
         $operation = [
             'summary' => $route['description'] ?? 'API endpoint',
             'tags' => [$this->extractTag($route['uri'])],
@@ -81,7 +83,7 @@ class OpenApiGenerator
         ];
 
         // Add request body if method supports it
-        if (in_array($route['method'], ['POST', 'PUT', 'PATCH'])) {
+        if (in_array($method, ['POST', 'PUT', 'PATCH'])) {
             $operation['requestBody'] = $this->generateRequestBody($route);
         }
 
@@ -102,7 +104,7 @@ class OpenApiGenerator
     {
         $parameters = [];
 
-        // Path parameters
+        // Path parameters from service (extracted from URI like {id}, {user_id})
         if (! empty($route['parameters'])) {
             foreach ($route['parameters'] as $paramName => $param) {
                 $parameters[] = [
@@ -112,22 +114,7 @@ class OpenApiGenerator
                     'schema' => [
                         'type' => $param['type'] ?? 'string',
                     ],
-                    'description' => $param['description'] ?? '',
-                ];
-            }
-        }
-
-        // Query parameters
-        if (! empty($route['query_parameters'])) {
-            foreach ($route['query_parameters'] as $paramName => $param) {
-                $parameters[] = [
-                    'name' => $paramName,
-                    'in' => 'query',
-                    'required' => $param['required'] ?? false,
-                    'schema' => [
-                        'type' => $param['type'] ?? 'string',
-                    ],
-                    'description' => $param['description'] ?? '',
+                    'description' => $param['description'] ?? 'Path parameter',
                 ];
             }
         }
@@ -175,7 +162,8 @@ class OpenApiGenerator
      */
     protected function generateResponses(array $route): array
     {
-        $successStatus = $this->getSuccessStatusCode($route['method']);
+        $method = $route['http_method'] ?? $route['method'] ?? 'GET';
+        $successStatus = $this->getSuccessStatusCode($method);
 
         return [
             (string) $successStatus => [

@@ -61,12 +61,24 @@ class ApiCollectionDownloadTest extends TestCase
      */
     public function test_postman_collection_auto_generation()
     {
-        // Delete any existing files
-        $docsPath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        // Get the absolute path
+        $responsePath = config('api-inspector.response_path') ?? 'api-docs';
+        $storagePath = config('api-inspector.storage_path', 'storage');
+        
+        if ($storagePath === 'local') {
+            $docsPath = public_path($responsePath);
+        } else {
+            $docsPath = storage_path("app/public/{$responsePath}");
+        }
+        
+        // Create directory if needed
         if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
+        
         $file = "$docsPath/postman_collection.json";
+        
+        // Delete any existing files
         if (file_exists($file)) {
             unlink($file);
         }
@@ -78,7 +90,7 @@ class ApiCollectionDownloadTest extends TestCase
         $this->assertNotNull($response);
 
         // File should now exist
-        $this->assertTrue(file_exists($file), 'Postman collection should be auto-generated');
+        $this->assertTrue(file_exists($file), "Postman collection should be auto-generated at $file");
     }
 
     /**
@@ -86,12 +98,24 @@ class ApiCollectionDownloadTest extends TestCase
      */
     public function test_openapi_auto_generation()
     {
-        // Delete any existing files
-        $docsPath = config('api-inspector.response_path') ?? storage_path('api-docs');
+        // Get the absolute path
+        $responsePath = config('api-inspector.response_path') ?? 'api-docs';
+        $storagePath = config('api-inspector.storage_path', 'storage');
+        
+        if ($storagePath === 'local') {
+            $docsPath = public_path($responsePath);
+        } else {
+            $docsPath = storage_path("app/public/{$responsePath}");
+        }
+        
+        // Create directory if needed
         if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
+        
         $file = "$docsPath/openapi.json";
+        
+        // Delete any existing files
         if (file_exists($file)) {
             unlink($file);
         }
@@ -103,7 +127,7 @@ class ApiCollectionDownloadTest extends TestCase
         $this->assertNotNull($response);
 
         // File should now exist
-        $this->assertTrue(file_exists($file), 'OpenAPI spec should be auto-generated');
+        $this->assertTrue(file_exists($file), "OpenAPI spec should be auto-generated at $file");
     }
 
     /**
@@ -112,6 +136,12 @@ class ApiCollectionDownloadTest extends TestCase
     public function test_postman_endpoint_via_http()
     {
         $response = $this->get('/api/api-inspector-postman');
+
+        // Debug: Check if we have an error response
+        if ($response->getStatusCode() !== 200) {
+            $json = $response->json();
+            \Log::error('Postman endpoint error: '.json_encode($json));
+        }
 
         // TestResponse has getStatusCode() method
         $this->assertEquals(200, $response->getStatusCode());

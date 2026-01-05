@@ -4,6 +4,7 @@ namespace Irabbi360\LaravelApiInspector;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Http\Request;
 use ReflectionClass;
 use ReflectionMethod;
 
@@ -12,11 +13,12 @@ class LaravelApiInspectorService
     /**
      * Get API routes and their documentation data
      */
-    public function apiListData($request)
+    public function apiListData(?Request $request = null)
     {
         $routes = [];
         $requestRuleExtractor = new \Irabbi360\LaravelApiInspector\Extractors\RequestRuleExtractor;
         $uriPrefix = config('api-inspector.only_route_uri_start_with', '');
+        $request = $request ?? request();
         $groupBy = $request->query('groupBy', 'default'); // Get groupBy parameter from query
 
         // Extract all API routes from the router
