@@ -53,7 +53,7 @@ class PostmanGenerator
     protected function generateItem(array $route): array
     {
         $method = $route['http_method'] ?? $route['method'] ?? 'GET';
-        
+
         return [
             'name' => $route['description'] ?? $route['uri'],
             'request' => [
@@ -108,7 +108,7 @@ class PostmanGenerator
     protected function generateBody(array $route): ?array
     {
         $method = $route['http_method'] ?? $route['method'] ?? 'GET';
-        
+
         if (! in_array($method, ['POST', 'PUT', 'PATCH'])) {
             return null;
         }

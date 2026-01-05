@@ -74,7 +74,7 @@ class OpenApiGenerator
     protected function generateOperation(array $route): array
     {
         $method = $route['http_method'] ?? $route['method'] ?? 'GET';
-        
+
         $operation = [
             'summary' => $route['description'] ?? 'API endpoint',
             'tags' => [$this->extractTag($route['uri'])],

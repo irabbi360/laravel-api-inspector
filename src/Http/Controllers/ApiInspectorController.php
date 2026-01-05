@@ -28,7 +28,7 @@ class ApiInspectorController extends Controller
                 'path' => config('api-inspector.route_path', '/api-docs'),
                 'route_path' => config('api-inspector.route_path', 'api-docs'),
                 'api_path' => 'api',
-                'root_path' => \Request::root()
+                'root_path' => \Request::root(),
             ],
         ]);
     }

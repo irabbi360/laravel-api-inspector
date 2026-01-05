@@ -1,6 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 use Irabbi360\LaravelApiInspector\Tests\TestCase;
 

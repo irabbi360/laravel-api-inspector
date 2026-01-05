@@ -466,23 +466,23 @@ class LaravelApiInspectorService
     {
         try {
             $controllerName = $route->getActionName();
-            if (!$controllerName || $controllerName === 'Closure') {
+            if (! $controllerName || $controllerName === 'Closure') {
                 return null;
             }
 
             // Parse controller@method format
-            if (!str_contains($controllerName, '@')) {
+            if (! str_contains($controllerName, '@')) {
                 return null;
             }
 
             [$controller, $method] = explode('@', $controllerName);
 
-            if (!class_exists($controller)) {
+            if (! class_exists($controller)) {
                 return null;
             }
 
             $reflection = new \ReflectionClass($controller);
-            if (!$reflection->hasMethod($method)) {
+            if (! $reflection->hasMethod($method)) {
                 return null;
             }
 
@@ -496,13 +496,14 @@ class LaravelApiInspectorService
 
             if ($resourceClass) {
                 $schema = $this->extractResourceSchemaRecursively($resourceClass);
+
                 return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
             // Fallback: check return type
             $returnType = $controllerMethod->getReturnType();
 
-            if (!$returnType) {
+            if (! $returnType) {
                 return null;
             }
 
@@ -516,6 +517,7 @@ class LaravelApiInspectorService
             if ($resolvedReturnType && class_exists($resolvedReturnType) && is_subclass_of($resolvedReturnType, \Illuminate\Http\Resources\Json\JsonResource::class)) {
                 // Extract resource schema recursively
                 $schema = $this->extractResourceSchemaRecursively($resolvedReturnType);
+
                 return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
@@ -533,7 +535,7 @@ class LaravelApiInspectorService
      */
     private function wrapWithPaginationSchema(?array $schema): ?array
     {
-        if (!$schema) {
+        if (! $schema) {
             return null;
         }
 
@@ -588,7 +590,7 @@ class LaravelApiInspectorService
     {
         $docComment = $method->getDocComment();
 
-        if (!$docComment) {
+        if (! $docComment) {
             return false;
         }
 

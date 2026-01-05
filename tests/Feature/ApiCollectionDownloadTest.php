@@ -64,20 +64,20 @@ class ApiCollectionDownloadTest extends TestCase
         // Get the absolute path
         $responsePath = config('api-inspector.response_path') ?? 'api-docs';
         $storagePath = config('api-inspector.storage_path', 'storage');
-        
+
         if ($storagePath === 'local') {
             $docsPath = public_path($responsePath);
         } else {
             $docsPath = storage_path("app/public/{$responsePath}");
         }
-        
+
         // Create directory if needed
         if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
-        
+
         $file = "$docsPath/postman_collection.json";
-        
+
         // Delete any existing files
         if (file_exists($file)) {
             unlink($file);
@@ -101,20 +101,20 @@ class ApiCollectionDownloadTest extends TestCase
         // Get the absolute path
         $responsePath = config('api-inspector.response_path') ?? 'api-docs';
         $storagePath = config('api-inspector.storage_path', 'storage');
-        
+
         if ($storagePath === 'local') {
             $docsPath = public_path($responsePath);
         } else {
             $docsPath = storage_path("app/public/{$responsePath}");
         }
-        
+
         // Create directory if needed
         if (! is_dir($docsPath)) {
             mkdir($docsPath, 0755, true);
         }
-        
+
         $file = "$docsPath/openapi.json";
-        
+
         // Delete any existing files
         if (file_exists($file)) {
             unlink($file);

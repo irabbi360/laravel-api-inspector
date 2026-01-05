@@ -35,6 +35,7 @@ class TestControllerWithDocBlockOnly
 {
     /**
      * Get user profile
+     *
      * @LAPIresponsesSchema ProfileResource
      */
     public function show()
@@ -58,6 +59,7 @@ class TestControllerWithBoth
 {
     /**
      * Get user profile
+     *
      * @LAPIresponsesSchema PostResource
      */
     public function show(): ProfileResource
@@ -104,7 +106,7 @@ class ResponseSchemaExtractionTest extends TestCase
 
         $resolvedClass = $this->invokePrivateMethod($service, 'resolveReturnTypeName', [
             $returnTypeName,
-            $method
+            $method,
         ]);
 
         $this->assertNotNull($resolvedClass);
@@ -145,7 +147,7 @@ class ResponseSchemaExtractionTest extends TestCase
         $returnTypeName = (string) $returnType;
         $resolvedClass = $this->invokePrivateMethod($service, 'resolveReturnTypeName', [
             $returnTypeName,
-            $method
+            $method,
         ]);
 
         // Extract schema recursively
