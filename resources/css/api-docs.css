@@ -83,7 +83,9 @@ body {
 .mt-4 {
     margin-top: 16px !important;
 }
-
+.bg-white {
+    background: white !important;
+}
 /* Loading Spinner */
 .loading-spinner {
     width: 20px;

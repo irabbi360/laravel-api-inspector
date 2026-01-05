@@ -84,7 +84,7 @@ class LaravelApiInspectorService
                     'requires_auth' => $this->requiresAuth($route),
                     'parameters' => $parameters,
                     'request_rules' => $requestRules,
-                    'response_schema' => $responseSchema,
+                    'response_schema' => ['data' => $responseSchema, 'status' => true, 'message' => 'Success'],
                     'response_example' => ['success' => true, 'message' => 'Success'],
                     'responses' => config('api-inspector.default_responses', []),
                     ...$this->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
@@ -505,10 +505,13 @@ class LaravelApiInspectorService
             // Get the return type name safely
             $returnTypeName = (string) $returnType;
 
+            // Resolve the return type class name (handle unqualified names)
+            $resolvedReturnType = $this->resolveReturnTypeName($returnTypeName, $controllerMethod);
+
             // Check if it's an Illuminate\Http\Resources\Json\JsonResource
-            if (class_exists($returnTypeName) && is_subclass_of($returnTypeName, \Illuminate\Http\Resources\Json\JsonResource::class)) {
+            if ($resolvedReturnType && class_exists($resolvedReturnType) && is_subclass_of($resolvedReturnType, \Illuminate\Http\Resources\Json\JsonResource::class)) {
                 // Extract resource schema recursively
-                return $this->extractResourceSchemaRecursively($returnTypeName);
+                return $this->extractResourceSchemaRecursively($resolvedReturnType);
             }
 
             return null;
@@ -591,6 +594,59 @@ class LaravelApiInspectorService
             if (class_exists($guess)) {
                 return $guess;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve return type class name (handle unqualified class names)
+     */
+    private function resolveReturnTypeName(string $returnTypeName, ReflectionMethod $method): ?string
+    {
+        // If already fully qualified, return as-is
+        if (strpos($returnTypeName, '\\') !== false) {
+            return $returnTypeName;
+        }
+
+        // Get the declaring class to resolve the namespace
+        $declaringClass = $method->getDeclaringClass();
+        $controllerNamespace = $declaringClass->getNamespaceName();
+
+        // Try to resolve using the controller's namespace
+        $fullyQualifiedName = $controllerNamespace.'\\'.$returnTypeName;
+        if (class_exists($fullyQualifiedName)) {
+            return $fullyQualifiedName;
+        }
+
+        // Try to find it using use statements from the controller file
+        $fileName = $declaringClass->getFileName();
+        if ($fileName && file_exists($fileName)) {
+            $fileContent = file_get_contents($fileName);
+
+            // Extract use statements
+            preg_match_all('/^use\s+(.+?);/m', $fileContent, $useMatches);
+
+            foreach ($useMatches[1] as $useStatement) {
+                $useStatement = trim($useStatement);
+
+                // Check for aliased imports: use Foo\Bar as Baz
+                if (preg_match('/(.+)\s+as\s+(\w+)$/', $useStatement, $aliasMatch)) {
+                    if ($aliasMatch[2] === $returnTypeName) {
+                        return trim($aliasMatch[1]);
+                    }
+                }
+
+                // Check for direct match (use App\Http\Resources\ProfileResource)
+                if (\Str::endsWith($useStatement, '\\'.$returnTypeName)) {
+                    return $useStatement;
+                }
+            }
+        }
+
+        // Try direct class_exists (for absolute paths or built-in types)
+        if (class_exists($returnTypeName)) {
+            return $returnTypeName;
         }
 
         return null;
