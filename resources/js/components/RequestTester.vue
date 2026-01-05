@@ -90,7 +90,7 @@
           </div>
           <input
             v-model="formData[name]"
-            :type="getInputType(name)"
+            :type="text"
             :placeholder="`Enter ${name}`"
             class="input-minimal"
             @input="updateRequestBody"
