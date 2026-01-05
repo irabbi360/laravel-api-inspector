@@ -6,6 +6,11 @@ return [
     'title' => 'Laravel API Inspector',
     'enabled' => true,
 
+    // database settings for api analytics
+    'database' => [
+        'table' => env('API_INSPECTOR_ANALYTICS_TABLE_NAME', 'api_inspector_analytics'),
+    ],
+
     /*
     * Route where request docs will be served from laravel app.
     * localhost:8080/api-docs

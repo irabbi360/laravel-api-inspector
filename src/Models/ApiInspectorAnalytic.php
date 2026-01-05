@@ -4,10 +4,8 @@ namespace Irabbi360\LaravelApiInspector\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ApiAnalytic extends Model
+class ApiInspectorAnalytic extends Model
 {
-    protected $table = 'api_inspector_analytics';
-
     protected $fillable = [
         'route',
         'method',
@@ -20,6 +18,12 @@ class ApiAnalytic extends Model
         'error',
         'recorded_at',
     ];
+
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->table = config('api-inspector.database.table', 'api_inspector_analytics');
+    }
 
     protected $casts = [
         'duration_ms' => 'float',

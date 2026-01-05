@@ -152,6 +152,7 @@ Or without the annotation, it will auto-detect from the return type:
         $users = User::latest()->paginate();
         return ProfileResource::collection($users);
     }
+```
 
 - ✅ Parse @LAPIresponsesSchema ResourceName from docblocks
 - ✅ Parse @LAPIpagination Pagination from docblocks
@@ -329,6 +330,12 @@ Automatically track and monitor API performance:
 ]
 ```
 
+After enabling, the package will log request metrics to the database. You need add the middleware to your API routes:
+
+```php
+ Irabbi360\LaravelApiInspector\Middleware\ApiInspectorAnalyticsMiddleware;
+```
+
 **Features:**
 - ✅ Real-time request tracking
 - ✅ Response time analytics
@@ -405,29 +412,29 @@ Document and manage webhooks with automatic payload tracking:
 Programmatically access analytics:
 
 ```php
-use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Irabbi360\LaravelApiInspector\Models\ApiInspectorAnalytic;
 
 // Get route statistics
-$stats = ApiAnalytic::getRouteStats('api/users/index');
+$stats = ApiInspectorAnalytic::getRouteStats('api/users/index');
 // Returns: total_requests, avg_response_time, error_rate, etc.
 
 // Get top slow routes
-$slowRoutes = ApiAnalytic::getTopSlowRoutes(10);
+$slowRoutes = ApiInspectorAnalytic::getTopSlowRoutes(10);
 
 // Get top error routes
-$errorRoutes = ApiAnalytic::getTopErrorRoutes(10);
+$errorRoutes = ApiInspectorAnalytic::getTopErrorRoutes(10);
 
 // Get status code distribution
-$codes = ApiAnalytic::getStatusCodeStats();
+$codes = ApiInspectorAnalytic::getStatusCodeStats();
 
 // Get recent analytics
-$recent = ApiAnalytic::recent(60)->get(); // Last 60 minutes
+$recent = ApiInspectorAnalytic::recent(60)->get(); // Last 60 minutes
 
 // Get errors
-$errors = ApiAnalytic::errors()->get();
+$errors = ApiInspectorAnalytic::errors()->get();
 
 // Get slow requests
-$slow = ApiAnalytic::slow(500)->get(); // Over 500ms
+$slow = ApiInspectorAnalytic::slow(500)->get(); // Over 500ms
 ```
 
 ## How It Works

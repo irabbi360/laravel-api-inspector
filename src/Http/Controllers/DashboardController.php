@@ -4,7 +4,7 @@ namespace Irabbi360\LaravelApiInspector\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Irabbi360\LaravelApiInspector\Models\ApiInspectorAnalytic;
 use Irabbi360\LaravelApiInspector\Services\DashboardStatsService;
 
 class DashboardController
@@ -22,7 +22,7 @@ class DashboardController
         $range = $request->get('range', '24h');
         $minutes = $this->service->getRangeInMinutes($range);
 
-        $query = ApiAnalytic::recent($minutes);
+        $query = ApiInspectorAnalytic::recent($minutes);
 
         $totalRequests = $query->count();
         $avgResponseTime = $query->avg('duration_ms') ?? 0;
@@ -31,14 +31,14 @@ class DashboardController
         $avgMemory = $query->avg('memory_usage') ?? 0;
 
         // Get slowest route
-        $slowestRoute = ApiAnalytic::recent($minutes)
+        $slowestRoute = ApiInspectorAnalytic::recent($minutes)
             ->selectRaw('route, AVG(duration_ms) as avg_time')
             ->groupBy('route')
             ->orderByDesc('avg_time')
             ->first();
 
         // Get trends
-        $previousQuery = ApiAnalytic::whereDate('recorded_at', '>=', now()->subMinutes($minutes * 2))
+        $previousQuery = ApiInspectorAnalytic::whereDate('recorded_at', '>=', now()->subMinutes($minutes * 2))
             ->whereDate('recorded_at', '<', now()->subMinutes($minutes));
         $previousCount = $previousQuery->count();
         $requestsTrend = $previousCount > 0 ? (($totalRequests - $previousCount) / $previousCount) * 100 : 0;

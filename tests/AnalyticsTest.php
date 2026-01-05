@@ -1,10 +1,10 @@
 <?php
 
-use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Irabbi360\LaravelApiInspector\Models\ApiInspectorAnalytic;
 
 beforeEach(function () {
     // Create test analytics data
-    ApiAnalytic::create([
+    ApiInspectorAnalytic::create([
         'route' => 'api/users/index',
         'method' => 'GET',
         'uri' => '/api/users',
@@ -17,7 +17,7 @@ beforeEach(function () {
         'recorded_at' => now(),
     ]);
 
-    ApiAnalytic::create([
+    ApiInspectorAnalytic::create([
         'route' => 'api/users/store',
         'method' => 'POST',
         'uri' => '/api/users',
@@ -30,7 +30,7 @@ beforeEach(function () {
         'recorded_at' => now(),
     ]);
 
-    ApiAnalytic::create([
+    ApiInspectorAnalytic::create([
         'route' => 'api/users/show',
         'method' => 'GET',
         'uri' => '/api/users/1',
@@ -45,12 +45,12 @@ beforeEach(function () {
 });
 
 it('records api analytics', function () {
-    expect(ApiAnalytic::count())->toBe(3);
-    expect(ApiAnalytic::where('status_code', 200)->count())->toBe(1);
+    expect(ApiInspectorAnalytic::count())->toBe(3);
+    expect(ApiInspectorAnalytic::where('status_code', 200)->count())->toBe(1);
 });
 
 it('calculates average response time', function () {
-    $avg = ApiAnalytic::avg('duration_ms');
+    $avg = ApiInspectorAnalytic::avg('duration_ms');
     $expected = (125.5 + 250.5 + 50.2) / 3;
 
     expect($avg)->toBeGreaterThan($expected - 1);
@@ -58,40 +58,40 @@ it('calculates average response time', function () {
 });
 
 it('filters analytics by route', function () {
-    $routeAnalytics = ApiAnalytic::forRoute('api/users/index')->get();
+    $routeAnalytics = ApiInspectorAnalytic::forRoute('api/users/index')->get();
 
     expect($routeAnalytics)->toHaveCount(1);
     expect($routeAnalytics[0]->status_code)->toBe(200);
 });
 
 it('gets error analytics', function () {
-    $errors = ApiAnalytic::errors()->get();
+    $errors = ApiInspectorAnalytic::errors()->get();
 
     expect($errors)->toHaveCount(1);
     expect($errors[0]->error)->toBe('User not found');
 });
 
 it('gets slow requests', function () {
-    $slow = ApiAnalytic::slow(200)->get();
+    $slow = ApiInspectorAnalytic::slow(200)->get();
 
     expect($slow)->toHaveCount(1);
     expect($slow[0]->duration_ms)->toBe(250.5);
 });
 
 it('gets recent analytics', function () {
-    $recent = ApiAnalytic::recent(60)->get();
+    $recent = ApiInspectorAnalytic::recent(60)->get();
 
     expect($recent->count())->toBeGreaterThan(0);
 });
 
 it('calculates average response time for route', function () {
-    $avg = ApiAnalytic::averageResponseTime('api/users/index');
+    $avg = ApiInspectorAnalytic::averageResponseTime('api/users/index');
 
     expect($avg)->toBe(125.5);
 });
 
 it('calculates error rate for route', function () {
-    ApiAnalytic::create([
+    ApiInspectorAnalytic::create([
         'route' => 'api/users/index',
         'method' => 'GET',
         'uri' => '/api/users',
@@ -104,7 +104,7 @@ it('calculates error rate for route', function () {
         'recorded_at' => now(),
     ]);
 
-    $errorRate = ApiAnalytic::errorRate('api/users/index');
+    $errorRate = ApiInspectorAnalytic::errorRate('api/users/index');
 
     // 1 error out of 2 requests = 50%
     expect($errorRate)->toBeGreaterThan(49);
@@ -112,7 +112,7 @@ it('calculates error rate for route', function () {
 });
 
 it('gets route statistics', function () {
-    $stats = ApiAnalytic::getRouteStats('api/users/index');
+    $stats = ApiInspectorAnalytic::getRouteStats('api/users/index');
 
     expect($stats['total_requests'])->toBe(1);
     expect($stats['avg_response_time'])->toBe(125.5);
@@ -120,7 +120,7 @@ it('gets route statistics', function () {
 });
 
 it('gets status code statistics', function () {
-    $stats = ApiAnalytic::getStatusCodeStats();
+    $stats = ApiInspectorAnalytic::getStatusCodeStats();
 
     expect($stats[200])->toBe(1);
     expect($stats[201])->toBe(1);
@@ -128,7 +128,7 @@ it('gets status code statistics', function () {
 });
 
 it('gets top slow routes', function () {
-    $routes = ApiAnalytic::getTopSlowRoutes(5);
+    $routes = ApiInspectorAnalytic::getTopSlowRoutes(5);
 
     expect($routes)->toHaveCount(3);
     expect($routes[0]->route)->toBe('api/users/store'); // Slowest is 250.5ms
@@ -136,7 +136,7 @@ it('gets top slow routes', function () {
 
 it('gets top error routes', function () {
     // Create more errors
-    ApiAnalytic::create([
+    ApiInspectorAnalytic::create([
         'route' => 'api/posts/show',
         'method' => 'GET',
         'uri' => '/api/posts/1',
@@ -149,7 +149,7 @@ it('gets top error routes', function () {
         'recorded_at' => now(),
     ]);
 
-    $routes = ApiAnalytic::getTopErrorRoutes(5);
+    $routes = ApiInspectorAnalytic::getTopErrorRoutes(5);
 
     expect($routes->count())->toBeGreaterThan(0);
 });
@@ -160,26 +160,26 @@ it('tests bearer token authentication', function () {
 });
 
 it('filters analytics by status code', function () {
-    $successResponses = ApiAnalytic::withStatusCode(200)->get();
+    $successResponses = ApiInspectorAnalytic::withStatusCode(200)->get();
 
     expect($successResponses)->toHaveCount(1);
     expect($successResponses[0]->status_code)->toBe(200);
 });
 
 it('tracks memory usage', function () {
-    $analytics = ApiAnalytic::first();
+    $analytics = ApiInspectorAnalytic::first();
 
     expect($analytics->memory_usage)->toBeGreaterThan(0);
 });
 
 it('tracks ip address', function () {
-    $analytics = ApiAnalytic::first();
+    $analytics = ApiInspectorAnalytic::first();
 
     expect($analytics->ip_address)->toBe('127.0.0.1');
 });
 
 it('tracks user agent', function () {
-    $analytics = ApiAnalytic::first();
+    $analytics = ApiInspectorAnalytic::first();
 
     expect($analytics->user_agent)->toBe('Test Agent');
 });

@@ -4,10 +4,10 @@ namespace Irabbi360\LaravelApiInspector\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Irabbi360\LaravelApiInspector\Models\ApiInspectorAnalytic;
 use Symfony\Component\HttpFoundation\Response;
 
-class AnalyticsMiddleware
+class ApiAnalyticsMiddleware
 {
     /**
      * Track API requests and responses
@@ -67,7 +67,7 @@ class AnalyticsMiddleware
             $duration = ($endTime - $startTime) * 1000; // Convert to milliseconds
             $memory = memory_get_usage() - $startMemory;
 
-            ApiAnalytic::create([
+            ApiInspectorAnalytic::create([
                 'route' => $request->route()?->getName() ?? $request->path(),
                 'method' => $request->getMethod(),
                 'uri' => $request->getPathInfo(),

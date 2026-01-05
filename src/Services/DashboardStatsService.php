@@ -4,7 +4,7 @@ namespace Irabbi360\LaravelApiInspector\Services;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Irabbi360\LaravelApiInspector\Models\ApiAnalytic;
+use Irabbi360\LaravelApiInspector\Models\ApiInspectorAnalytic;
 
 class DashboardStatsService
 {
@@ -13,7 +13,7 @@ class DashboardStatsService
      */
     public function getStatusCodeStats()
     {
-        $stats = ApiAnalytic::selectRaw('status_code, COUNT(*) as count, AVG(duration_ms) as avg_duration')
+        $stats = ApiInspectorAnalytic::selectRaw('status_code, COUNT(*) as count, AVG(duration_ms) as avg_duration')
             ->groupBy('status_code')
             ->orderBy('status_code')
             ->get();
@@ -32,15 +32,15 @@ class DashboardStatsService
      */
     public function getTopRoutes()
     {
-        return ApiAnalytic::selectRaw('route, method, COUNT(*) as count, AVG(duration_ms) as avg_duration, MIN(duration_ms) as min, MAX(duration_ms) as max, status_code')
+        return ApiInspectorAnalytic::selectRaw('route, method, COUNT(*) as count, AVG(duration_ms) as avg_duration, MIN(duration_ms) as min, MAX(duration_ms) as max, status_code')
             ->groupBy('route', 'method', 'status_code')
             ->orderByDesc('avg_duration')
             ->limit(10)
             ->get()
             ->map(function ($route) {
                 // Calculate error rate for this route
-                $totalForRoute = ApiAnalytic::where('route', $route->route)->count();
-                $errorsForRoute = ApiAnalytic::where('route', $route->route)
+                $totalForRoute = ApiInspectorAnalytic::where('route', $route->route)->count();
+                $errorsForRoute = ApiInspectorAnalytic::where('route', $route->route)
                     ->whereNotNull('error')
                     ->where('status_code', '>=', 400)
                     ->count();
@@ -65,7 +65,7 @@ class DashboardStatsService
      */
     public function getRecentErrors(int $minutes)
     {
-        return ApiAnalytic::recent($minutes)
+        return ApiInspectorAnalytic::recent($minutes)
             ->whereNotNull('error')
             ->where('status_code', '>=', 400)
             ->orderByDesc('recorded_at')
@@ -156,7 +156,7 @@ class DashboardStatsService
             ], 400);
         }
 
-        $stats = ApiAnalytic::getRouteStats($route);
+        $stats = ApiInspectorAnalytic::getRouteStats($route);
 
         return response()->json($stats);
     }
@@ -168,7 +168,7 @@ class DashboardStatsService
     {
         $days = $request->get('days', 30);
 
-        $count = ApiAnalytic::where('recorded_at', '<', now()->subDays($days))->delete();
+        $count = ApiInspectorAnalytic::where('recorded_at', '<', now()->subDays($days))->delete();
 
         return response()->json([
             'success' => true,
