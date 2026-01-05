@@ -28,7 +28,7 @@ const router = createRouter({
       component: Home,
     },
     {
-      path: window.ApiInspector.basePath + '/dashboard',
+      path: window.ApiInspector.basePath + '/stats',
       name: 'dashboard',
       component: Dashboard,
     }

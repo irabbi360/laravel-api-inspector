@@ -346,7 +346,7 @@ After enabling, the package will log request metrics to the database. You need a
 
 ### Web UI Dashboard
 
-Access the Telescope-like dashboard at `/api-inspector/stats`:
+Access the Telescope-like dashboard at `/api-docs/stats`:
 
 **Dashboard Includes:**
 - Real-time request metrics
@@ -361,7 +361,6 @@ Access the Telescope-like dashboard at `/api-inspector/stats`:
 ```php
 'dashboard' => [
     'enabled' => true,
-    'path' => 'api-inspector/stats',
     'auth_middleware' => ['web'], // Protect dashboard access
 ]
 ```
