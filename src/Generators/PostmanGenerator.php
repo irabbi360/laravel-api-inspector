@@ -25,7 +25,7 @@ class PostmanGenerator
         return [
             'info' => [
                 'name' => $this->name,
-                'description' => 'Auto-generated API documentation',
+                'description' => 'Auto-generated '.config('api-inspector.title').' Postman collection',
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             ],
             'item' => $this->generateItems(),
@@ -52,15 +52,16 @@ class PostmanGenerator
      */
     protected function generateItem(array $route): array
     {
+        $method = $route['http_method'] ?? $route['method'] ?? 'GET';
+
         return [
             'name' => $route['description'] ?? $route['uri'],
             'request' => [
-                'method' => $route['method'],
+                'method' => $method,
                 'header' => $this->generateHeaders($route),
                 'body' => $this->generateBody($route),
                 'url' => [
                     'raw' => $this->generateUrl($route),
-                    'protocol' => 'https',
                     'host' => ['{{base_url}}'],
                     'path' => $this->parsePath($route['uri']),
                     'query' => $this->generateQueryParams($route),
@@ -106,13 +107,15 @@ class PostmanGenerator
      */
     protected function generateBody(array $route): ?array
     {
-        if (! in_array($route['method'], ['POST', 'PUT', 'PATCH'])) {
+        $method = $route['http_method'] ?? $route['method'] ?? 'GET';
+
+        if (! in_array($method, ['POST', 'PUT', 'PATCH'])) {
             return null;
         }
 
         $bodyData = [];
 
-        // Add request rules as body
+        // Add request rules as body schema
         if (! empty($route['request_rules'])) {
             foreach ($route['request_rules'] as $fieldName => $field) {
                 $bodyData[$fieldName] = $field['example'] ?? '';
@@ -121,7 +124,7 @@ class PostmanGenerator
 
         return [
             'mode' => 'raw',
-            'raw' => json_encode($bodyData, JSON_PRETTY_PRINT),
+            'raw' => json_encode($bodyData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
             'options' => [
                 'raw' => [
                     'language' => 'json',
@@ -137,13 +140,14 @@ class PostmanGenerator
     {
         $params = [];
 
-        if (! empty($route['query_parameters'])) {
-            foreach ($route['query_parameters'] as $paramName => $param) {
+        // Use 'parameters' field from service (path parameters extracted from URI)
+        if (! empty($route['parameters'])) {
+            foreach ($route['parameters'] as $paramName => $param) {
                 $params[] = [
                     'key' => $paramName,
                     'value' => $param['example'] ?? '',
-                    'description' => $param['description'] ?? '',
-                    'disabled' => ! ($param['required'] ?? false),
+                    'description' => $param['description'] ?? 'Path parameter',
+                    'disabled' => false,
                 ];
             }
         }

@@ -54,7 +54,7 @@ class GenerateDocsCommand extends Command
             $this->info('Found '.count($routes).' routes');
 
             // Enhance routes with request and response data
-            $routes = $this->enrichRoutes($routes);
+            // $routes = $this->enrichRoutes($routes);
 
             // Cache routes
             $this->cacheWriter->saveRoutes($routes);

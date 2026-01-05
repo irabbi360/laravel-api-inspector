@@ -1,8 +1,9 @@
 <?php
 
-namespace Irabbi360\LaravelApiInspector;
+namespace Irabbi360\LaravelApiInspector\Services;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 use ReflectionMethod;
@@ -12,11 +13,12 @@ class LaravelApiInspectorService
     /**
      * Get API routes and their documentation data
      */
-    public function apiListData($request)
+    public function apiListData(?Request $request = null)
     {
         $routes = [];
         $requestRuleExtractor = new \Irabbi360\LaravelApiInspector\Extractors\RequestRuleExtractor;
         $uriPrefix = config('api-inspector.only_route_uri_start_with', '');
+        $request = $request ?? request();
         $groupBy = $request->query('groupBy', 'default'); // Get groupBy parameter from query
 
         // Extract all API routes from the router
@@ -82,7 +84,7 @@ class LaravelApiInspectorService
                     'requires_auth' => $this->requiresAuth($route),
                     'parameters' => $parameters,
                     'request_rules' => $requestRules,
-                    'response_schema' => $responseSchema,
+                    'response_schema' => ['data' => $responseSchema, 'status' => true, 'message' => 'Success'],
                     'response_example' => ['success' => true, 'message' => 'Success'],
                     'responses' => config('api-inspector.default_responses', []),
                     ...$this->getRouteGroup($route->uri, $route->getActionName(), $groupBy),
@@ -486,11 +488,16 @@ class LaravelApiInspectorService
 
             $controllerMethod = $reflection->getMethod($method);
 
+            // Check if this route uses pagination
+            $hasPagination = $this->hasPaginationAnnotation($controllerMethod);
+
             // First, check for @LAPIresponsesSchema annotation
             $resourceClass = $this->extractResourceFromDocBlock($controllerMethod);
 
             if ($resourceClass) {
-                return $this->extractResourceSchemaRecursively($resourceClass);
+                $schema = $this->extractResourceSchemaRecursively($resourceClass);
+
+                return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
             // Fallback: check return type
@@ -503,16 +510,91 @@ class LaravelApiInspectorService
             // Get the return type name safely
             $returnTypeName = (string) $returnType;
 
+            // Resolve the return type class name (handle unqualified names)
+            $resolvedReturnType = $this->resolveReturnTypeName($returnTypeName, $controllerMethod);
+
             // Check if it's an Illuminate\Http\Resources\Json\JsonResource
-            if (class_exists($returnTypeName) && is_subclass_of($returnTypeName, \Illuminate\Http\Resources\Json\JsonResource::class)) {
+            if ($resolvedReturnType && class_exists($resolvedReturnType) && is_subclass_of($resolvedReturnType, \Illuminate\Http\Resources\Json\JsonResource::class)) {
                 // Extract resource schema recursively
-                return $this->extractResourceSchemaRecursively($returnTypeName);
+                $schema = $this->extractResourceSchemaRecursively($resolvedReturnType);
+
+                return $hasPagination ? $this->wrapWithPaginationSchema($schema) : $schema;
             }
 
             return null;
         } catch (\Exception $e) {
             return null;
         }
+    }
+
+    /**
+     * Wrap resource schema with Laravel pagination structure
+
+    /**
+     * Wrap resource schema with Laravel pagination metadata
+     */
+    private function wrapWithPaginationSchema(?array $schema): ?array
+    {
+        if (! $schema) {
+            return null;
+        }
+
+        // Get pagination schema from config
+        $paginationSchema = config('api-inspector.pagination_schema', [
+            'data' => 'array',
+            'links' => [
+                'first' => 'string',
+                'last' => 'string',
+                'prev' => 'string | null',
+                'next' => 'string | null',
+            ],
+            'meta' => [
+                'current_page' => 'integer',
+                'from' => 'integer | null',
+                'last_page' => 'integer',
+                'path' => 'string',
+                'per_page' => 'integer',
+                'to' => 'integer | null',
+                'total' => 'integer',
+                'links' => 'array',
+            ],
+        ]);
+
+        // Get which pagination sections to show
+        $showPagination = config('api-inspector.pagination_schema.show_pagination', ['links', 'meta']);
+
+        // Build the schema based on show_pagination config
+        $paginatedSchema = [
+            'resource_class' => $schema['resource_class'] ?? 'Paginated',
+            'resource_type' => 'paginated_collection',
+            'schema' => [],
+        ];
+
+        $paginatedSchema['schema']['data'] = $schema['schema'] ?? [];
+        // Add sections based on show_pagination config
+        if (in_array('links', $showPagination) && isset($paginationSchema['links'])) {
+            $paginatedSchema['schema']['links'] = $paginationSchema['links'];
+        }
+
+        if (in_array('meta', $showPagination) && isset($paginationSchema['meta'])) {
+            $paginatedSchema['schema']['meta'] = $paginationSchema['meta'];
+        }
+
+        return $paginatedSchema;
+    }
+
+    /**
+     * Extract pagination flag from DocBlock annotation
+     */
+    private function hasPaginationAnnotation(ReflectionMethod $method): bool
+    {
+        $docComment = $method->getDocComment();
+
+        if (! $docComment) {
+            return false;
+        }
+
+        return preg_match('/@LAPIpagination/', $docComment) === 1;
     }
 
     /**
@@ -589,6 +671,59 @@ class LaravelApiInspectorService
             if (class_exists($guess)) {
                 return $guess;
             }
+        }
+
+        return null;
+    }
+
+    /**
+     * Resolve return type class name (handle unqualified class names)
+     */
+    private function resolveReturnTypeName(string $returnTypeName, ReflectionMethod $method): ?string
+    {
+        // If already fully qualified, return as-is
+        if (strpos($returnTypeName, '\\') !== false) {
+            return $returnTypeName;
+        }
+
+        // Get the declaring class to resolve the namespace
+        $declaringClass = $method->getDeclaringClass();
+        $controllerNamespace = $declaringClass->getNamespaceName();
+
+        // Try to resolve using the controller's namespace
+        $fullyQualifiedName = $controllerNamespace.'\\'.$returnTypeName;
+        if (class_exists($fullyQualifiedName)) {
+            return $fullyQualifiedName;
+        }
+
+        // Try to find it using use statements from the controller file
+        $fileName = $declaringClass->getFileName();
+        if ($fileName && file_exists($fileName)) {
+            $fileContent = file_get_contents($fileName);
+
+            // Extract use statements
+            preg_match_all('/^use\s+(.+?);/m', $fileContent, $useMatches);
+
+            foreach ($useMatches[1] as $useStatement) {
+                $useStatement = trim($useStatement);
+
+                // Check for aliased imports: use Foo\Bar as Baz
+                if (preg_match('/(.+)\s+as\s+(\w+)$/', $useStatement, $aliasMatch)) {
+                    if ($aliasMatch[2] === $returnTypeName) {
+                        return trim($aliasMatch[1]);
+                    }
+                }
+
+                // Check for direct match (use App\Http\Resources\ProfileResource)
+                if (\Str::endsWith($useStatement, '\\'.$returnTypeName)) {
+                    return $useStatement;
+                }
+            }
+        }
+
+        // Try direct class_exists (for absolute paths or built-in types)
+        if (class_exists($returnTypeName)) {
+            return $returnTypeName;
         }
 
         return null;

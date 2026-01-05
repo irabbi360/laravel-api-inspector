@@ -34,7 +34,37 @@
       </div>
 
       <div v-if="useJsonEditor && hasRequestRules" class="json-editor-container">
-        <label><strong>Request Body (JSON)</strong></label>
+        <div class="json-editor-header">
+          <label><strong>Request Body (JSON)</strong></label>
+          <div class="json-editor-actions">
+            <button class="btn-small" @click="toggleExamplesPanel" title="Manage saved examples">
+              📋 {{ savedExamples.length }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Examples Panel -->
+        <div v-if="showExamplesPanel" class="saved-examples-panel">
+          <div class="saved-examples-header">
+            <h4>Saved Examples</h4>
+            <button class="btn-close" @click="toggleExamplesPanel">✕</button>
+          </div>
+          <div v-if="savedExamples.length === 0" class="no-examples">
+            No saved examples yet. Save your first example below!
+          </div>
+          <div v-else class="examples-list">
+            <div v-for="(example, index) in savedExamples" :key="index" class="example-item">
+              <div class="example-name">{{ example.name }}</div>
+              <div class="example-timestamp">{{ formatDate(example.timestamp) }}</div>
+              <div class="example-actions">
+                <button class="btn-action" @click="loadExample(example)" title="Load example">📥</button>
+                <button class="btn-action" @click="copyExample(example)" title="Copy to clipboard">📋</button>
+                <button class="btn-action btn-delete" @click="deleteExample(index)" title="Delete">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <textarea
           v-model="jsonBody"
           class="json-editor"
@@ -42,33 +72,29 @@
           placeholder="{}"
           @input="updateJsonBody($event.target.value)"
         ></textarea>
+
+        <div class="json-editor-footer">
+          <button class="btn-secondary" @click="saveExample" title="Save current JSON as example">
+            💾 Save as Example
+          </button>
+        </div>
       </div>
 
       <div v-else class="form-fields-container">
-        <div v-for="(field, name) in requestRules" :key="name" class="form-field-group mb-0">
-          <div class="field-label justify-between">
-            <div>
-              <span class="field-name me-2">{{ name }}</span>
-              <span v-if="field.required" class="field-required">REQUIRED</span>
-              <span v-else class="field-optional">(optional)</span>
-            </div>
-            <div>
-              <span v-if="field.type" class="field-type">Type: {{ field.type }}</span>
-            </div>
+        <div v-for="(field, name) in requestRules" :key="name" class="form-field-minimal">
+          <div class="field-header-minimal">
+            <label class="field-label-minimal">
+              {{ name }}
+              <span v-if="field.required" class="badge-required">REQUIRED</span>
+            </label>
           </div>
-          <div class="field-meta-info flex">
-            <div v-if="field.description" class="field-description">
-              {{ field.description }}
-            </div>
-            <input
-              v-model="formData[name]"
-              :type="getInputType(name)"
-              :placeholder="`Enter ${name}`"
-              class="field-input"
-              @input="updateRequestBody"
-            />
-          </div>
-  
+          <input
+            v-model="formData[name]"
+            :type="getInputType(name)"
+            :placeholder="`Enter ${name}`"
+            class="input-minimal"
+            @input="updateRequestBody"
+          />
         </div>
       </div>
 
@@ -84,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 const props = defineProps({
   requestBody: {
@@ -154,6 +180,125 @@ const updateJsonBody = (value) => {
   emit('update:requestBody', value)
 }
 
+const showExamplesPanel = ref(false)
+const savedExamples = ref([])
+
+const toggleExamplesPanel = () => {
+  showExamplesPanel.value = !showExamplesPanel.value
+  if (showExamplesPanel.value) {
+    loadSavedExamples()
+  }
+}
+
+const saveExample = async () => {
+  if (!props.route) return
+
+  const exampleName = prompt('Enter a name for this example:', 'Example ' + new Date().toLocaleTimeString())
+  if (!exampleName) return
+
+  try {
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/save-request-example`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          route_uri: props.route.uri,
+          route_method: props.route.http_method,
+          body: jsonBody.value,
+          name: exampleName
+        })
+      }
+    )
+
+    if (response.ok) {
+      alert('Example saved successfully!')
+      loadSavedExamples()
+    } else {
+      alert('Failed to save example')
+    }
+  } catch (error) {
+    console.error('Error saving example:', error)
+    alert('Error saving example')
+  }
+}
+
+const loadSavedExamples = async () => {
+  if (!props.route) return
+
+  try {
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/get-request-examples?uri=${encodeURIComponent(props.route.uri)}&method=${props.route.http_method}`,
+      {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      }
+    )
+
+    if (response.ok) {
+      const data = await response.json()
+      savedExamples.value = data.examples || []
+    }
+  } catch (error) {
+    console.error('Error loading examples:', error)
+  }
+}
+
+const loadExample = (example) => {
+  jsonBody.value = example.body
+  emit('update:requestBody', example.body)
+  showExamplesPanel.value = false
+}
+
+const copyExample = (example) => {
+  navigator.clipboard.writeText(example.body)
+  alert('Example copied to clipboard!')
+}
+
+const deleteExample = async (index) => {
+  if (!props.route) return
+  if (!confirm('Are you sure you want to delete this example?')) return
+
+  try {
+    const example = savedExamples.value[index]
+    const response = await fetch(
+      `${window.location.origin}/api/api-inspector-docs/delete-request-example`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        },
+        body: JSON.stringify({
+          route_uri: props.route.uri,
+          route_method: props.route.http_method,
+          index: index
+        })
+      }
+    )
+
+    if (response.ok) {
+      loadSavedExamples()
+    } else {
+      alert('Failed to delete example')
+    }
+  } catch (error) {
+    console.error('Error deleting example:', error)
+    alert('Error deleting example')
+  }
+}
+
+const formatDate = (timestamp) => {
+  if (!timestamp) return ''
+  return new Date(timestamp).toLocaleString()
+}
+
 // Initialize formData from requestRules
 watch(
   () => props.requestRules,
@@ -177,6 +322,10 @@ watch(
   },
   { immediate: true }
 )
+
+onMounted(() => {
+  loadSavedExamples()
+})
 </script>
 
 <style scoped>
@@ -197,7 +346,7 @@ watch(
   background: white;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  padding: 20px;
+  padding: 10px;
 }
 
 .tester-tabs {
@@ -236,97 +385,223 @@ watch(
   margin-bottom: 20px;
 }
 
-.form-group {
+.form-fields-container {
+  display: grid;
+  gap: 15px;
   margin-bottom: 20px;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 600;
-  color: #3e3e42;
+.form-field-minimal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.form-field-group {
-  margin-bottom: 20px;
-  padding: 10px 10px 0;
-  background: #f9f9f9;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-}
-
-.field-label {
+.field-header-minimal {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.field-label-minimal {
   font-weight: 600;
-  color: #3e3e42;
+  color: #333;
+  font-size: 14px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.field-name {
-  font-family: 'Courier New', monospace;
-  color: #0066cc;
-  font-weight: 700;
-}
-
-.field-required {
+.badge-required {
   display: inline-block;
   background: #ffebee;
   color: #c62828;
-  padding: 2px 6px;
+  padding: 1px 5px;
   border-radius: 3px;
-  font-size: 0.75em;
+  font-size: 0.7em;
   font-weight: 600;
-  border: 1px solid #ef5350;
+  /* border: 1px solid #ef5350; */
 }
 
-.field-optional {
-  display: inline-block;
-  color: #999;
-  font-size: 0.85em;
-  font-weight: 500;
-}
-
-.field-input {
+.input-minimal {
   width: 100%;
   padding: 10px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   font-family: 'Courier New', monospace;
-  font-size: 0.9em;
-  margin-bottom: 8px;
+  font-size: 13px;
+  transition: border-color 0.2s;
 }
 
-.field-input:focus {
+.input-minimal:focus {
   outline: none;
   border-color: #0066cc;
   box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
 }
 
-.field-meta-info {
+.json-editor-container {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.json-editor-header {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #666;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 8px;
 }
 
-.field-type {
+.json-editor-header label {
   display: block;
+  font-weight: 600;
+  margin: 0;
+}
+
+.json-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-small {
+  padding: 4px 12px;
+  font-size: 12px;
+  background: #f0f0f0;
+  border: 1px solid #d0d0d0;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-small:hover {
+  background: #e0e0e0;
+  border-color: #b0b0b0;
+}
+
+.saved-examples-panel {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  width: 350px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.saved-examples-header {
+  padding: 12px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.saved-examples-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.no-examples {
+  padding: 16px 12px;
+  text-align: center;
   color: #999;
-  font-size: 0.85em;
+  font-size: 13px;
 }
 
-.field-description {
-  display: block;
-  color: #666;
-  font-size: 0.85em;
+.examples-list {
+  max-height: 350px;
+  overflow-y: auto;
 }
 
-.json-editor-container {
-  margin-bottom: 20px;
+.example-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.example-item:last-child {
+  border-bottom: none;
+}
+
+.example-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: #333;
+  word-break: break-word;
+}
+
+.example-timestamp {
+  font-size: 11px;
+  color: #999;
+}
+
+.example-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-action {
+  flex: 1;
+  padding: 6px;
+  font-size: 12px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.btn-action:hover {
+  background: #e8e8e8;
+  border-color: #b0b0b0;
+}
+
+.btn-action.btn-delete:hover {
+  background: #ffebee;
+  border-color: #ef5350;
+  color: #c62828;
+}
+
+.json-editor-footer {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: 10px 16px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #e0e0e0;
+  border-color: #b0b0b0;
 }
 
 .json-editor-container label {

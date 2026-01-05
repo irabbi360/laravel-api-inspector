@@ -1,6 +1,7 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import Home from './pages/Home.vue';
+import Dashboard from './pages/Dashboard.vue';
 import Toast from './components/Toast.vue'
 import '../css/api-docs.css'
 import { createRouter, createWebHistory } from 'vue-router';
@@ -20,11 +21,18 @@ if (window.ApiInspector.path === '' || window.ApiInspector.path === '/') {
 }
 
 const router = createRouter({
-  routes: [{
-    path: window.ApiInspector.basePath,
-    name: 'home',
-    component: Home,
-  }],
+  routes: [
+    {
+      path: window.ApiInspector.basePath,
+      name: 'home',
+      component: Home,
+    },
+    {
+      path: window.ApiInspector.basePath + '/dashboard',
+      name: 'dashboard',
+      component: Dashboard,
+    }
+  ],
   history: createWebHistory(),
   base: routerBasePath,
 });

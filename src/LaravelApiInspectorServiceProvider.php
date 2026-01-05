@@ -18,6 +18,7 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasRoutes(['web', 'api'])
             ->hasAssets()
+            ->hasMigrations(['create_api_inspector_analytics_table'])
             // artisan commands
             ->hasCommands([
                 GenerateDocsCommand::class,
@@ -30,7 +31,9 @@ class LaravelApiInspectorServiceProvider extends PackageServiceProvider
                         $command->info('This package will help you generate auto API documentation.');
                     })
                     ->publishConfigFile()
+                    ->publishMigrations()
                     ->publishAssets()
+                    ->askToRunMigrations()
                     ->endWith(function (InstallCommand $command): void {
                         $command->info('Laravel API Inspector has been installed successfully!');
                         $command->info('You can now visit /api-docs to view your API documentation.');

@@ -4,6 +4,7 @@
       :api-data="apiData"
       :loading="loading"
       :auth-token="authToken"
+      :menus="menus"
       @refresh="fetchApiData"
       @update:authToken="(value) => (authToken = value)"
     />
@@ -46,6 +47,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useMenu } from '../composables/useMenu';
 import Topbar from '../components/Topbar.vue'
 import Sidebar from '../components/Sidebar.vue'
 import EndpointDetail from '../components/EndpointDetail.vue'
@@ -54,8 +56,7 @@ const loading = ref(true)
 const sending = ref(false)
 const apiData = ref({
   routes: [],
-  title: 'API Inspector Documentation',
-  version: '1.0.0'
+  ...window.ApiInspector
 })
 const selectedRoute = ref(null)
 const requestBody = ref('{}')
@@ -65,6 +66,7 @@ const authToken = ref(localStorage.getItem('api-docs-auth-token') || '')
 const pathParams = ref({})
 
 const { showToast } = useToast()
+const { menus } = useMenu()
 
 const groupedRoutes = computed(() => {
     if (!apiData.value.routes) return {};
@@ -145,6 +147,14 @@ const selectEndpoint = (route) => {
 
 const sendRequest = async () => {
   if (!selectedRoute.value) return
+
+  // Check if all required path parameters are filled
+  const emptyParams = Object.entries(pathParams.value).filter(([_, value]) => !value || value.trim() === '')
+  if (emptyParams.length > 0) {
+    const missingParams = emptyParams.map(([param]) => param).join(', ')
+    showToast(`Required path parameters missing: ${missingParams}`, 'error')
+    return
+  }
 
   try {
     sending.value = true

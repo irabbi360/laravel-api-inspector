@@ -111,4 +111,85 @@ class TypeInferer
 
         return $constraints;
     }
+
+    /**
+     * Check if a string is a date value rather than a field name
+     */
+    private static function isDateValue(string $value): bool
+    {
+        // Check for date patterns like YYYY-MM-DD, DD/MM/YYYY, etc
+        if (preg_match('/^\d{4}-\d{2}-\d{2}|^\d{2}\/\d{2}\/\d{4}/', $value)) {
+            return true;
+        }
+        // Check for time patterns
+        if (preg_match('/\d{2}:\d{2}(:\d{2})?/', $value)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Extract relational field information from rules
+     * For rules like 'confirmed', 'same:field', 'different:field', 'in_array:field.*'
+     *
+     * @return array<string, mixed>
+     */
+    public static function extractRelationalRules(string $rules, string $fieldName): array
+    {
+        $relational = [];
+        $ruleArray = explode('|', $rules);
+
+        foreach ($ruleArray as $rule) {
+            if ($rule === 'confirmed') {
+                // 'confirmed' rule requires a {field}_confirmation field
+                $relational['confirmed'] = true;
+                $relational['requires_field'] = $fieldName.'_confirmation';
+                $relational['description_suffix'] = '(must match '.$fieldName.'_confirmation)';
+            } elseif (str_starts_with($rule, 'same:')) {
+                // 'same:field' rule requires the field to match another field
+                $otherField = str_replace('same:', '', $rule);
+                $relational['same_as'] = $otherField;
+                $relational['description_suffix'] = '(must match '.$otherField.')';
+            } elseif (str_starts_with($rule, 'different:')) {
+                // 'different:field' rule requires the field to be different from another
+                $otherField = str_replace('different:', '', $rule);
+                $relational['different_from'] = $otherField;
+                $relational['description_suffix'] = '(must be different from '.$otherField.')';
+            } elseif (str_starts_with($rule, 'in_array:')) {
+                // 'in_array:field.*' rule requires values to be in another field's array
+                $otherField = str_replace('in_array:', '', $rule);
+                $relational['in_array'] = $otherField;
+                $relational['description_suffix'] = '(must be values from '.$otherField.')';
+            } elseif (str_starts_with($rule, 'before:')) {
+                // 'before:field' or 'before:2024-01-01'
+                $beforeValue = str_replace('before:', '', $rule);
+                $relational['before'] = $beforeValue;
+                // It's a field reference if it's not a date value
+                if (! self::isDateValue($beforeValue)) {
+                    $relational['description_suffix'] = '(must be before '.$beforeValue.')';
+                }
+            } elseif (str_starts_with($rule, 'after:')) {
+                // 'after:field' or 'after:2024-01-01'
+                $afterValue = str_replace('after:', '', $rule);
+                $relational['after'] = $afterValue;
+                // It's a field reference if it's not a date value
+                if (! self::isDateValue($afterValue)) {
+                    $relational['description_suffix'] = '(must be after '.$afterValue.')';
+                }
+            } elseif (str_starts_with($rule, 'before_or_equal:')) {
+                $beforeValue = str_replace('before_or_equal:', '', $rule);
+                $relational['before_or_equal'] = $beforeValue;
+                // Always add description for before_or_equal
+                $relational['description_suffix'] = '(must be before or equal to '.$beforeValue.')';
+            } elseif (str_starts_with($rule, 'after_or_equal:')) {
+                $afterValue = str_replace('after_or_equal:', '', $rule);
+                $relational['after_or_equal'] = $afterValue;
+                // Always add description for after_or_equal
+                $relational['description_suffix'] = '(must be after or equal to '.$afterValue.')';
+            }
+        }
+
+        return $relational;
+    }
 }

@@ -3,3 +3,6 @@ parameters:
         -
             message: '#Parameter \#1 \$view of function view expects view-string\|null, string given#'
             path: src/Http/Controllers/ApiInspectorController.php
+        -
+            message: '#Call to deprecated method get\(\) of class Illuminate\\Http\\Request#'
+            path: src/Http/Controllers/DashboardController.php

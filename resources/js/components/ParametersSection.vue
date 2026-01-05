@@ -1,5 +1,5 @@
 <template>
-  <div v-if="parameters && Object.keys(parameters).length > 0" class="section">
+  <div v-if="parameters && Object.keys(parameters).length > 0" class="section mb-4">
     <div class="section-title">Parameters</div>
     <div class="expandable">
       <div class="expandable-header" @click="expanded = !expanded">
@@ -63,7 +63,7 @@ const expanded = ref(true)
 
 .expandable-header {
   background: #f5f5f5;
-  padding: 15px;
+  padding: 5px 10px;
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -81,7 +81,7 @@ const expanded = ref(true)
 }
 
 .expandable-content {
-  padding: 15px;
+  padding: 10px;
   background: white;
   border-top: 1px solid #e0e0e0;
 }
@@ -98,7 +98,7 @@ thead {
 
 th {
   text-align: left;
-  padding: 12px;
+  padding: 5px 10px;
   font-weight: 600;
   color: #666;
   border-bottom: 1px solid #e0e0e0;
