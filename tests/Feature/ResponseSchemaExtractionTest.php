@@ -76,7 +76,7 @@ class ResponseSchemaExtractionTest extends TestCase
         $reflection = new \ReflectionClass(TestControllerWithDocBlockOnly::class);
         $method = $reflection->getMethod('show');
 
-        $service = app(\Irabbi360\LaravelApiInspector\LaravelApiInspectorService::class);
+        $service = app(\Irabbi360\LaravelApiInspector\Services\LaravelApiInspectorService::class);
         $docComment = $method->getDocComment();
 
         // Verify DocBlock contains annotation
@@ -96,7 +96,7 @@ class ResponseSchemaExtractionTest extends TestCase
         $reflection = new \ReflectionClass(TestControllerWithReturnTypeOnly::class);
         $method = $reflection->getMethod('show');
 
-        $service = app(\Irabbi360\LaravelApiInspector\LaravelApiInspectorService::class);
+        $service = app(\Irabbi360\LaravelApiInspector\Services\LaravelApiInspectorService::class);
 
         // Test resolving return type name
         $returnType = $method->getReturnType();
@@ -120,7 +120,7 @@ class ResponseSchemaExtractionTest extends TestCase
         $reflection = new \ReflectionClass(TestControllerWithBoth::class);
         $method = $reflection->getMethod('show');
 
-        $service = app(\Irabbi360\LaravelApiInspector\LaravelApiInspectorService::class);
+        $service = app(\Irabbi360\LaravelApiInspector\Services\LaravelApiInspectorService::class);
 
         // Extract from DocBlock
         $docBlockClass = $this->invokePrivateMethod($service, 'extractResourceFromDocBlock', [$method]);
@@ -138,7 +138,7 @@ class ResponseSchemaExtractionTest extends TestCase
         $reflection = new \ReflectionClass(TestControllerWithReturnTypeOnly::class);
         $method = $reflection->getMethod('show');
 
-        $service = app(\Irabbi360\LaravelApiInspector\LaravelApiInspectorService::class);
+        $service = app(\Irabbi360\LaravelApiInspector\Services\LaravelApiInspectorService::class);
 
         // Resolve the return type
         $returnType = $method->getReturnType();

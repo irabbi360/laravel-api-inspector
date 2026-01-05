@@ -1,10 +1,10 @@
 <?php
 
-namespace Irabbi360\LaravelApiInspector;
+namespace Irabbi360\LaravelApiInspector\Services;
 
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use ReflectionClass;
 use ReflectionMethod;
 

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Irabbi360\LaravelApiInspector\Facades\LaravelApiInspector;
 use Irabbi360\LaravelApiInspector\Generators\OpenApiGenerator;
 use Irabbi360\LaravelApiInspector\Generators\PostmanGenerator;
-use Irabbi360\LaravelApiInspector\LaravelApiInspectorService;
+use Irabbi360\LaravelApiInspector\Services\LaravelApiInspectorService;
 
 class ApiInspectorController extends Controller
 {
