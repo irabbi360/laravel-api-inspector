@@ -141,7 +141,20 @@ Or without the annotation, it will auto-detect from the return type:
     }
 ```
 
+```php
+<?php
+    /**
+     * Get users list with pagination
+     * @LAPIpagination
+     */
+    public function index()
+    {
+        $users = User::latest()->paginate();
+        return ProfileResource::collection($users);
+    }
+
 - ✅ Parse @LAPIresponsesSchema ResourceName from docblocks
+- ✅ Parse @LAPIpagination Pagination from docblocks
 - ✅ Display response schema as JSON format
 - ✅ Recursively handle nested resources
 - ✅ Support unqualified resource names with auto-namespace resolution
