@@ -83,6 +83,9 @@ body {
 .mt-4 {
     margin-top: 16px !important;
 }
+.me-1 {
+    margin-right: 5px !important;
+}
 .bg-white {
     background: white !important;
 }
