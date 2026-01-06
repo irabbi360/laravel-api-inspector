@@ -193,8 +193,6 @@ const sendRequest = async () => {
     if (queryString) {
       urlString = urlString + '?' + queryString
     }
-    
-    console.log(queryString, 'queryString');
 
     // Create full URL
     const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
@@ -203,6 +201,7 @@ const sendRequest = async () => {
       method: selectedRoute.value.http_method,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
       }
