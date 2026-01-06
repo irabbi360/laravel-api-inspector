@@ -17,6 +17,25 @@
         </div>
       </div>
 
+      <div v-if="Object.keys(queryParamsData).length > 0" class="form-group">
+        <label><strong>Query Parameters</strong></label>
+        <div class="form-fields-container">
+          <div v-for="(param, name) in queryParamsData" :key="name" class="form-group">
+            <label>
+              {{ name }}
+              <span v-if="param.required" class="badge-required">REQUIRED</span>
+            </label>
+            <input
+              v-model="queryParamsData[name]"
+              type="text"
+              :placeholder="`Enter ${name}`"
+              @input="$emit('update:queryParams', queryParamsData)"
+            />
+            <div v-if="param.description" class="param-description">{{ param.description }}</div>
+          </div>
+        </div>
+      </div>
+
       <div v-if="hasRequestRules" class="tester-tabs">
         <button
           :class="['tab-btn', { active: useJsonEditor }]"
@@ -132,14 +151,21 @@ const props = defineProps({
   pathParams: {
     type: Object,
     default: () => ({})
+  },
+  queryParams: {
+    type: Object,
+    default: () => ({})
   }
 })
 
-const emit = defineEmits(['update:requestBody', 'send-request', 'update:pathParams'])
+const emit = defineEmits(['update:requestBody', 'send-request', 'update:pathParams', 'update:queryParams', 'update:queryParams'])
 
 const useJsonEditor = ref(true)
 const formData = ref({})
 const pathParams = ref(props.pathParams)
+const queryParams = ref(props.queryParams)
+const queryParamsData = ref(props.queryParams)
+const queryParamsUri = ref(props.queryParams)
 const jsonBody = ref('{}')
 
 const hasRequestRules = computed(() => {
@@ -323,6 +349,17 @@ watch(
   { immediate: true }
 )
 
+// Sync queryParams with prop
+watch(
+  () => props.queryParams,
+  (newParams) => {
+    if (newParams) {
+      queryParamsData.value = { ...newParams }
+    }
+  },
+  { immediate: true }
+)
+
 onMounted(() => {
   loadSavedExamples()
 })
@@ -422,6 +459,13 @@ onMounted(() => {
   font-size: 0.7em;
   font-weight: 600;
   /* border: 1px solid #ef5350; */
+}
+
+.param-description {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+  margin-top: 4px;
 }
 
 .input-minimal {
