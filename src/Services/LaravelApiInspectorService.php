@@ -89,9 +89,9 @@ class LaravelApiInspectorService
 
                 // Generate URI with query params if they exist
                 $generatedUri = $route->uri;
-                if (!empty($queryParams)) {
+                if (! empty($queryParams)) {
                     $paramNames = array_keys($queryParams);
-                    $generatedUri = $route->uri . '?' . implode('=&', $paramNames) . '=';
+                    $generatedUri = $route->uri.'?'.implode('=&', $paramNames).'=';
                 }
 
                 $routes[] = [
@@ -622,10 +622,10 @@ class LaravelApiInspectorService
 
     /**
      * Extract query parameters from DocBlock annotation
-     * 
+     *
      * Format: @LAPIQueryParams name:string required, page:integer optional, limit:integer optional
      * or JSON format: @LAPIQueryParams {"name": {"type": "string", "required": true}, "page": {"type": "integer"}}
-     * 
+     *
      * @return array<string, array>
      */
     public function extractQueryParams(string $controllerName): array
@@ -670,7 +670,7 @@ class LaravelApiInspectorService
 
     /**
      * Parse JSON formatted query parameters
-     * 
+     *
      * @return array<string, array>
      */
     private function parseJsonQueryParams(string $jsonString): array
@@ -713,7 +713,7 @@ class LaravelApiInspectorService
      * Parse string formatted query parameters
      * Format 1: name:string required, page:integer optional (detailed)
      * Format 2: name, page, limit (simple names only)
-     * 
+     *
      * @return array<string, array>
      */
     private function parseStringQueryParams(string $paramString): array
@@ -744,8 +744,8 @@ class LaravelApiInspectorService
             } else {
                 // Simple format: just the parameter name (e.g., "name", "page", "limit")
                 $paramName = preg_replace('/[^a-zA-Z0-9_]/', '', $param);
-                
-                if (!empty($paramName)) {
+
+                if (! empty($paramName)) {
                     $queryParams[$paramName] = [
                         'name' => $paramName,
                         'type' => 'string',
@@ -762,7 +762,7 @@ class LaravelApiInspectorService
     /**
      * Extract query parameters from URI
      * Format: api/get-advertisements?search&per_page&page&status
-     * 
+     *
      * @return array<string, array>
      */
     private function extractQueryParamsFromUri(string $uri): array
@@ -789,7 +789,7 @@ class LaravelApiInspectorService
             $paramName = preg_replace('/[=&].+/', '', $param);
             $paramName = preg_replace('/[^a-zA-Z0-9_]/', '', $paramName);
 
-            if (!empty($paramName) && !isset($queryParams[$paramName])) {
+            if (! empty($paramName) && ! isset($queryParams[$paramName])) {
                 $queryParams[$paramName] = [
                     'name' => $paramName,
                     'type' => 'string',
@@ -801,7 +801,6 @@ class LaravelApiInspectorService
 
         return $queryParams;
     }
-
 
     /**
      * Extract resource class from DocBlock annotation
