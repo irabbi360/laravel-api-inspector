@@ -154,8 +154,46 @@ Or without the annotation, it will auto-detect from the return type:
     }
 ```
 
+### Query parameters
+
+```php
+<?php
+/**
+ * Get users list
+ * @LAPIQueryParams {
+ *   "name": {"type": "string", "required": true, "description": "Filter by user name"},
+ *   "page": {"type": "integer", "required": false, "example": 1},
+ *   "limit": {"type": "integer", "required": false}
+ * }
+ */
+public function index(Request $request) { ... }
+```
+
+or
+
+```php
+<?php
+/**
+ * Get users list
+ * @LAPIQueryParams name:string required, page:integer optional, limit:integer optional
+ */
+public function index(Request $request) { ... }
+```
+
+or
+
+```php
+<?php
+/**
+ * // Simple format (new)
+ * @LAPIQueryParams name, page, per_page, status
+ */
+public function index(Request $request) { ... }
+```
+
 - ✅ Parse @LAPIresponsesSchema ResourceName from docblocks
 - ✅ Parse @LAPIpagination Pagination from docblocks
+- ✅ Parse @LAPIQueryParams query params from docblocks
 - ✅ Display response schema as JSON format
 - ✅ Recursively handle nested resources
 - ✅ Support unqualified resource names with auto-namespace resolution

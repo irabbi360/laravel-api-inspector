@@ -64,6 +64,21 @@ class LaravelApiInspectorService
                     // Silent fail
                 }
 
+                $queryParams = [];
+                try {
+                    // Extract query parameters from controller method annotation
+                    if ($controllerName && $controllerName !== 'Closure') {
+                        $queryParams = $this->extractQueryParams($controllerName);
+                    }
+
+                    // Also extract from URI if present
+                    $uriQueryParams = $this->extractQueryParamsFromUri($route->uri);
+                    // Merge URI params with annotation params (annotation takes precedence)
+                    $queryParams = array_merge($uriQueryParams, $queryParams);
+                } catch (\Exception $e) {
+                    // Silent fail
+                }
+
                 $responseSchema = null;
                 try {
                     // Extract response schema from Resource if it exists
@@ -72,9 +87,16 @@ class LaravelApiInspectorService
                     // Silent fail
                 }
 
+                // Generate URI with query params if they exist
+                $generatedUri = $route->uri;
+                if (!empty($queryParams)) {
+                    $paramNames = array_keys($queryParams);
+                    $generatedUri = $route->uri . '?' . implode('=&', $paramNames) . '=';
+                }
+
                 $routes[] = [
                     'http_method' => strtoupper($method),
-                    'uri' => $route->uri,
+                    'uri' => $generatedUri,
                     'name' => $route->getName() ?? '',
                     'description' => $this->getRouteDescription($route),
                     'middleware' => $this->getRouteMiddleware($route),
@@ -83,6 +105,7 @@ class LaravelApiInspectorService
                     'method' => $this->getRouteControllerMethod($route),
                     'requires_auth' => $this->requiresAuth($route),
                     'parameters' => $parameters,
+                    'query_params' => $queryParams,
                     'request_rules' => $requestRules,
                     'response_schema' => ['data' => $responseSchema, 'status' => true, 'message' => 'Success'],
                     'response_example' => ['success' => true, 'message' => 'Success'],
@@ -596,6 +619,189 @@ class LaravelApiInspectorService
 
         return preg_match('/@LAPIpagination/', $docComment) === 1;
     }
+
+    /**
+     * Extract query parameters from DocBlock annotation
+     * 
+     * Format: @LAPIQueryParams name:string required, page:integer optional, limit:integer optional
+     * or JSON format: @LAPIQueryParams {"name": {"type": "string", "required": true}, "page": {"type": "integer"}}
+     * 
+     * @return array<string, array>
+     */
+    public function extractQueryParams(string $controllerName): array
+    {
+        try {
+            $parsed = \Irabbi360\LaravelApiInspector\Support\ReflectionHelper::parseControllerString($controllerName);
+
+            if (! $parsed) {
+                return [];
+            }
+
+            $reflectionMethod = \Irabbi360\LaravelApiInspector\Support\ReflectionHelper::getMethod($parsed['class'], $parsed['method']);
+
+            if (! $reflectionMethod) {
+                return [];
+            }
+
+            $docComment = $reflectionMethod->getDocComment();
+
+            if (! $docComment) {
+                return [];
+            }
+
+            // Match @LAPIQueryParams annotation
+            if (! preg_match('/@LAPIQueryParams\s+(.+?)(?=\n|$|@)/s', $docComment, $matches)) {
+                return [];
+            }
+
+            $paramString = trim($matches[1]);
+
+            // Try to parse as JSON first
+            if (preg_match('/^\s*\{/', $paramString)) {
+                return $this->parseJsonQueryParams($paramString);
+            }
+
+            // Parse as comma-separated format: name:string required, page:integer optional
+            return $this->parseStringQueryParams($paramString);
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Parse JSON formatted query parameters
+     * 
+     * @return array<string, array>
+     */
+    private function parseJsonQueryParams(string $jsonString): array
+    {
+        try {
+            $parsed = json_decode($jsonString, true);
+
+            if (! is_array($parsed)) {
+                return [];
+            }
+
+            $queryParams = [];
+            foreach ($parsed as $paramName => $paramConfig) {
+                if (is_array($paramConfig)) {
+                    $queryParams[$paramName] = [
+                        'name' => $paramName,
+                        'type' => $paramConfig['type'] ?? 'string',
+                        'required' => $paramConfig['required'] ?? false,
+                        'description' => $paramConfig['description'] ?? '',
+                        'example' => $paramConfig['example'] ?? null,
+                    ];
+                } else {
+                    // Simple format: just the type
+                    $queryParams[$paramName] = [
+                        'name' => $paramName,
+                        'type' => (string) $paramConfig,
+                        'required' => false,
+                        'description' => '',
+                    ];
+                }
+            }
+
+            return $queryParams;
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Parse string formatted query parameters
+     * Format 1: name:string required, page:integer optional (detailed)
+     * Format 2: name, page, limit (simple names only)
+     * 
+     * @return array<string, array>
+     */
+    private function parseStringQueryParams(string $paramString): array
+    {
+        $queryParams = [];
+
+        // Split by comma to get individual parameters
+        $params = array_map('trim', explode(',', $paramString));
+
+        foreach ($params as $param) {
+            if (empty($param)) {
+                continue;
+            }
+
+            // Check if it matches detailed format: name:type [required|optional] ["description"]
+            if (preg_match('/^(\w+):(\w+)(?:\s+(required|optional))?(?:\s+"([^"]*)")?/i', $param, $matches)) {
+                $paramName = $matches[1];
+                $paramType = $matches[2];
+                $isRequired = isset($matches[3]) && strtolower($matches[3]) === 'required';
+                $description = $matches[4] ?? '';
+
+                $queryParams[$paramName] = [
+                    'name' => $paramName,
+                    'type' => $paramType,
+                    'required' => $isRequired,
+                    'description' => $description,
+                ];
+            } else {
+                // Simple format: just the parameter name (e.g., "name", "page", "limit")
+                $paramName = preg_replace('/[^a-zA-Z0-9_]/', '', $param);
+                
+                if (!empty($paramName)) {
+                    $queryParams[$paramName] = [
+                        'name' => $paramName,
+                        'type' => 'string',
+                        'required' => false,
+                        'description' => '',
+                    ];
+                }
+            }
+        }
+
+        return $queryParams;
+    }
+
+    /**
+     * Extract query parameters from URI
+     * Format: api/get-advertisements?search&per_page&page&status
+     * 
+     * @return array<string, array>
+     */
+    private function extractQueryParamsFromUri(string $uri): array
+    {
+        $queryParams = [];
+
+        // Check if URI contains query parameters
+        if (strpos($uri, '?') === false) {
+            return $queryParams;
+        }
+
+        // Split URI and query string
+        [$baseUri, $queryString] = explode('?', $uri, 2);
+
+        // Split by & to get individual parameters
+        $params = array_map('trim', explode('&', $queryString));
+
+        foreach ($params as $param) {
+            if (empty($param)) {
+                continue;
+            }
+
+            // Clean up parameter name (remove = and values if present)
+            $paramName = preg_replace('/[=&].+/', '', $param);
+            $paramName = preg_replace('/[^a-zA-Z0-9_]/', '', $paramName);
+
+            if (!empty($paramName) && !isset($queryParams[$paramName])) {
+                $queryParams[$paramName] = [
+                    'name' => $paramName,
+                    'type' => 'string',
+                    'required' => false,
+                    'description' => '',
+                ];
+            }
+        }
+
+        return $queryParams;
+    }
+
 
     /**
      * Extract resource class from DocBlock annotation
