@@ -72,7 +72,7 @@
               <ResponseSchema
                 v-if="route.response_schema && Object.keys(route.response_schema).length > 0"
                 :schema="route.response_schema"
-                />
+              />
               <div v-else class="empty-state">
                 <div class="empty-state-icon">📄</div>
                 <p class="text-center">Response schema not available!</p>

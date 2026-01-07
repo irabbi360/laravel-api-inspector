@@ -6,7 +6,7 @@
     </div>
     <div class="detail-method-path">
       <span :class="['detail-method-badge', route.http_method.toLowerCase()]">{{ route.http_method }}</span>
-      <span class="detail-path">{{ route.uri }}</span>
+      <span class="detail-path text-truncate">{{ route.uri }}</span>
     </div>
   </div>
 </template>

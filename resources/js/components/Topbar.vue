@@ -27,7 +27,7 @@
       </div>
 
       <div class="topbar-controls">
-        <button @click="showAuthModal = true" :class="['btn', 'btn-auth', { authenticated: authToken }]">
+        <button @click="openAuthModal()" :class="['btn', 'btn-auth', { authenticated: authToken }]">
           <template v-if="authToken">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 feather-lock"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
           </template>
@@ -102,23 +102,23 @@
           </div>
         </div>
 
-        <div v-if="loading" class="loading-spinner"></div>
-        <button v-else @click="$emit('refresh')" class="btn btn-refresh">
-          ↻ Refresh
-        </button>
         <button @click="downloadPostman" class="btn btn-postman" title="Download Postman Collection">
            <img :src="exportIcons" alt="Export Icon" class="export-icon me-1" /> Postman
         </button>
         <button @click="downloadOpenApi" class="btn btn-openapi" title="Download OpenAPI Specification">
           <img :src="exportIcons" alt="Export Icon" class="export-icon me-1" /> OpenAPI
         </button>
-        <a
-          href="https://github.com/irabbi360/laravel-api-inspector/issues/new"
-          target="_blank"
+        <button
           class="btn btn-feature"
+          @click="gotoFeatureRequest"
         >
           Feature Request
-        </a>
+        </button>
+        <div v-if="loading" class="loading-spinner"></div>
+        <button v-else @click="$emit('refresh')" class="btn btn-refresh">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 feather-refresh-cw"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+           Refresh
+        </button>
       </div>
     </div>
 
@@ -192,6 +192,10 @@ const openAuthModal = () => {
   tempAuthToken.value = props.authToken
   showAuthModal.value = true
 }
+
+const gotoFeatureRequest = () => {
+  window.open('https://github.com/irabbi360/laravel-api-inspector/issues/new', '_blank')
+};
 
 const downloadPostman = async () => {
   try {
@@ -319,8 +323,12 @@ const downloadOpenApi = async () => {
 }
 
 .btn-auth {
-  background: #0066cc;
-  padding: 10px 20px;
+  background: #FF9800;
+  padding: 10px;
+}
+
+.btn-auth:hover {
+  background: #d28006;
 }
 
 .btn-auth.authenticated {
@@ -724,10 +732,9 @@ const downloadOpenApi = async () => {
 }
 
 .btn {
-  background: #0066cc;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;

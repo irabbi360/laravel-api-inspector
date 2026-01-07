@@ -2,6 +2,19 @@
   <div class="section">
     <div class="section-title">Send Request</div>
     <div class="request-tester">
+      <div>
+        <div class="input-group">
+          <input
+            type="text"
+            :value="route ? route.uri : ''"
+            disabled
+            class="input-with-icon"
+          />
+          <button class="copy-icon" title="Copy Endpoint URL" @click="copyToClipboard(route ? route.uri : '')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          </button>
+        </div>
+      </div>
       <div v-if="extractedPathParams && Object.keys(extractedPathParams).length > 0" class="form-group">
         <label><strong>Path Parameters</strong></label>
         <div class="form-fields-container">
@@ -130,6 +143,8 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useClipboard } from '../composables/useClipboard';
+const { copyToClipboard } = useClipboard();
 
 const props = defineProps({
   requestBody: {
@@ -384,6 +399,48 @@ onMounted(() => {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 10px;
+}
+
+.input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.input-with-icon {
+  width: 100%;
+  padding: 10px 40px 10px 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  background-color: #f9f9f9;
+  transition: border-color 0.2s;
+}
+
+.input-with-icon:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 3px rgba(0, 102, 204, 0.1);
+}
+
+.copy-icon {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: color 0.2s;
+}
+
+.copy-icon:hover {
+  color: #0066cc;
 }
 
 .tester-tabs {
