@@ -178,7 +178,7 @@ class ApiInspectorController extends Controller
             $generator = new OpenApiGenerator(
                 $routes,
                 config('app.name').' API',
-                '1.0.0',
+                LaravelApiInspector::version(),
                 config('app.url') ?? 'https://api.example.com'
             );
 

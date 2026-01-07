@@ -27,44 +27,98 @@
       </div>
 
       <div class="topbar-controls">
-        <div class="auth-input-group">
-          <label>🔐 Bearer Token:</label>
-          <input
-            :value="authToken"
-            @input="$emit('update:authToken', $event.target.value)"
-            type="password"
-            placeholder="Enter auth token..."
-          />
-          <div :class="['auth-status', { active: authToken }]">
-            <span class="auth-status-dot"></span>
-            {{ authToken ? 'Authenticated' : 'No token' }}
-          </div>
-          <button
-            v-if="authToken"
-            class="btn-logout"
-            @click="handleLogout"
-            title="Logout / Clear token"
-          >
-            Logout
-          </button>
-        </div>
-        <div v-if="loading" class="loading-spinner"></div>
-        <button v-else @click="$emit('refresh')" class="btn btn-refresh">
-          ↻ Refresh
+        <button @click="openAuthModal()" :class="['btn', 'btn-auth', { authenticated: authToken }]">
+          <template v-if="authToken">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 feather-lock"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </template>
+          <template v-else>
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 feather-unlock"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+          </template>
+           {{ authToken ? 'Authenticated' : 'Authorize' }}
         </button>
+
+        <!-- Auth Modal -->
+        <div v-if="showAuthModal" class="auth-modal-overlay" @click="closeAuthModal">
+          <div class="auth-modal" @click.stop>
+            <div class="auth-modal-header">
+              <h3>API Authorization</h3>
+              <button class="btn-modal-close" @click="closeAuthModal">✕</button>
+            </div>
+            <div class="auth-modal-body">
+              <div class="auth-method-selector">
+                <label class="auth-method-label">Authorization Type</label>
+                <div class="auth-method-options">
+                  <label class="auth-method-option">
+                    <input type="radio" v-model="authMethod" value="bearer" />
+                    <span>Bearer Token</span>
+                  </label>
+                  <!-- <label class="auth-method-option">
+                    <input type="radio" v-model="authMethod" value="apikey" />
+                    <span>API Key</span>
+                  </label> -->
+                </div>
+              </div>
+
+              <div class="auth-input-section">
+                <label v-if="authMethod === 'bearer'" class="auth-field-label">
+                  Bearer Token
+                  <span class="auth-required">*</span>
+                </label>
+                <!-- <label v-else class="auth-field-label">
+                  API Key
+                  <span class="auth-required">*</span>
+                </label> -->
+                <input
+                  v-model="tempAuthToken"
+                  type="password"
+                  :placeholder="authMethod === 'bearer' ? 'Enter your Bearer token...' : 'Enter your API key...'"
+                  class="auth-modal-input"
+                  @keyup.enter="applyAuth"
+                />
+                <div class="auth-input-hint">
+                  <span v-if="authMethod === 'bearer'">
+                    Enter your API Bearer token for authentication.
+                  </span>
+                  <!-- <span v-else>
+                    Enter your API Key for authentication.
+                  </span> -->
+                </div>
+              </div>
+
+              <div class="auth-modal-footer">
+                <button class="btn-modal-secondary" @click="closeAuthModal">Cancel</button>
+                <button class="btn-modal-primary" @click="applyAuth">Apply Authorization</button>
+              </div>
+
+              <div v-if="authToken" class="auth-modal-divider">
+                <span>Currently Authenticated</span>
+              </div>
+
+              <div v-if="authToken" class="auth-modal-logout">
+                <p class="auth-logout-text">You are currently authenticated. Click below to logout.</p>
+                <button class="btn-modal-logout" @click="handleLogout">Logout</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <button @click="downloadPostman" class="btn btn-postman" title="Download Postman Collection">
-          Postman
+           <img :src="exportIcons" alt="Export Icon" class="export-icon me-1" /> Postman
         </button>
         <button @click="downloadOpenApi" class="btn btn-openapi" title="Download OpenAPI Specification">
-          OpenAPI
+          <img :src="exportIcons" alt="Export Icon" class="export-icon me-1" /> OpenAPI
         </button>
-        <a
-          href="https://github.com/irabbi360/laravel-api-inspector/issues/new"
-          target="_blank"
+        <button
           class="btn btn-feature"
+          @click="gotoFeatureRequest"
         >
           Feature Request
-        </a>
+        </button>
+        <div v-if="loading" class="loading-spinner"></div>
+        <button v-else @click="$emit('refresh')" class="btn btn-refresh">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-1 feather-refresh-cw"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+           Refresh
+        </button>
       </div>
     </div>
 
@@ -85,6 +139,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import exportIcons from '@/img/export-icon.svg';
 
 const props = defineProps({
   apiData: {
@@ -108,15 +163,39 @@ const props = defineProps({
 const emit = defineEmits(['refresh', 'update:authToken', 'menu-click'])
 
 const activeMenuId = ref(null)
+const showAuthModal = ref(false)
+const tempAuthToken = ref('')
+const authMethod = ref('bearer')
 
 const handleMenuClick = (item) => {
   activeMenuId.value = item.id
   emit('menu-click', item)
 }
 
-const handleLogout = () => {
-  emit('update:authToken', '')
+const applyAuth = () => {
+  emit('update:authToken', tempAuthToken.value)
+  closeAuthModal()
 }
+
+const handleLogout = () => {
+  tempAuthToken.value = ''
+  emit('update:authToken', '')
+  closeAuthModal()
+}
+
+const closeAuthModal = () => {
+  showAuthModal.value = false
+  tempAuthToken.value = props.authToken
+}
+
+const openAuthModal = () => {
+  tempAuthToken.value = props.authToken
+  showAuthModal.value = true
+}
+
+const gotoFeatureRequest = () => {
+  window.open('https://github.com/irabbi360/laravel-api-inspector/issues/new', '_blank')
+};
 
 const downloadPostman = async () => {
   try {
@@ -243,7 +322,282 @@ const downloadOpenApi = async () => {
   flex-shrink: 0;
 }
 
-.topbar-menu {
+.btn-auth {
+  background: #FF9800;
+  padding: 10px;
+}
+
+.btn-auth:hover {
+  background: #d28006;
+}
+
+.btn-auth.authenticated {
+  background: #49cc90;
+}
+
+/* Auth Modal Styles */
+.auth-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.auth-modal {
+  background: #252526;
+  border: 1px solid #3e3e42;
+  border-radius: 8px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-modal-header {
+  padding: 24px;
+  border-bottom: 1px solid #3e3e42;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.auth-modal-header h3 {
+  color: #fff;
+  font-size: 1.3em;
+  margin: 0;
+  font-weight: 600;
+}
+
+.btn-modal-close {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-modal-close:hover {
+  background: #3e3e42;
+  color: #fff;
+}
+
+.auth-modal-body {
+  padding: 24px;
+}
+
+.auth-method-selector {
+  margin-bottom: 24px;
+}
+
+.auth-method-label {
+  display: block;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.auth-method-options {
+  display: flex;
+  gap: 16px;
+}
+
+.auth-method-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #ccc;
+  cursor: pointer;
+  font-size: 14px;
+  flex: 1;
+}
+
+.auth-method-option input[type="radio"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.auth-method-option:hover {
+  color: #fff;
+}
+
+.auth-input-section {
+  margin-bottom: 24px;
+}
+
+.auth-field-label {
+  display: block;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.auth-required {
+  color: #f93e3e;
+}
+
+.auth-modal-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: #2a2a2a;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  color: #fff;
+  font-family: monospace;
+  font-size: 14px;
+  transition: all 0.2s;
+  box-sizing: border-box;
+}
+
+.auth-modal-input:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 8px rgba(0, 102, 204, 0.3);
+  background: #333;
+}
+
+.auth-input-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
+.auth-modal-footer {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-modal-secondary {
+  padding: 12px 24px;
+  background: #3e3e42;
+  color: #ccc;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-modal-secondary:hover {
+  background: #4e4e52;
+  color: #fff;
+  border-color: #555;
+}
+
+.btn-modal-primary {
+  padding: 12px 24px;
+  background: #0066cc;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-modal-primary:hover {
+  background: #0052a3;
+}
+
+.btn-modal-primary:active {
+  transform: scale(0.98);
+}
+
+.auth-modal-divider {
+  margin: 24px 0;
+  padding: 12px 0;
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  position: relative;
+}
+
+.auth-modal-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #3e3e42;
+  z-index: 0;
+}
+
+.auth-modal-divider span {
+  position: relative;
+  background: #252526;
+  padding: 0 12px;
+  z-index: 1;
+}
+
+.auth-modal-logout {
+  padding: 16px;
+  background: #2a2a2a;
+  border: 1px solid #3e3e42;
+  border-radius: 4px;
+}
+
+.auth-logout-text {
+  color: #ccc;
+  font-size: 13px;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.btn-modal-logout {
+  width: 100%;
+  padding: 10px 16px;
+  background: #f93e3e;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-modal-logout:hover {
+  background: #d92e2e;
+}
+
+.btn-modal-logout:active {
+  transform: scale(0.98);
+
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 20px 16px 20px;
@@ -378,10 +732,9 @@ const downloadOpenApi = async () => {
 }
 
 .btn {
-  background: #0066cc;
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 10px;
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;

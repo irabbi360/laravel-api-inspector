@@ -11,9 +11,11 @@
           :sending="sending"
           :route="route"
           :path-params="pathParams"
+          :query-params="queryParams"
           @update:requestBody="(value) => $emit('update:requestBody', value)"
           @send-request="$emit('send-request')"
           @update:pathParams="(value) => $emit('update:pathParams', value)"
+          @update:queryParams="(value) => $emit('update:queryParams', value)"
         />
       </div>
       <div class="detail-body-right">
@@ -70,7 +72,7 @@
               <ResponseSchema
                 v-if="route.response_schema && Object.keys(route.response_schema).length > 0"
                 :schema="route.response_schema"
-                />
+              />
               <div v-else class="empty-state">
                 <div class="empty-state-icon">📄</div>
                 <p class="text-center">Response schema not available!</p>
@@ -128,10 +130,14 @@ const props = defineProps({
   pathParams: {
     type: Object,
     default: () => ({})
+  },
+  queryParams: {
+    type: Object,
+    default: () => ({})
   }
 })
 
-defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams', 'delete-response'])
+defineEmits(['update:requestBody', 'send-request', 'save-response', 'view-response', 'update:pathParams', 'update:queryParams', 'delete-response'])
 
 const activeTab = ref(0)
 

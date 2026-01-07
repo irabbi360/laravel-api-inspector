@@ -83,6 +83,9 @@ body {
 .mt-4 {
     margin-top: 16px !important;
 }
+.me-1 {
+    margin-right: 5px !important;
+}
 .bg-white {
     background: white !important;
 }
@@ -153,10 +156,9 @@ textarea:focus, input:focus, select:focus {
 
 /* Button Styles */
 .btn {
-    background: #0066cc;
     color: white;
     border: none;
-    padding: 10px 20px;
+    padding: 10px;
     border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
@@ -175,6 +177,9 @@ textarea:focus, input:focus, select:focus {
 .btn-sm {
     padding: 6px 12px;
     font-size: 0.9em;
+}
+.auth-bg{
+  background: #FF9800 !important;
 }
 
 /* Table Styles */
@@ -912,4 +917,16 @@ tr:hover {
   .data-table td {
     padding: 8px;
   }
+}
+
+.justify-between{
+  display: flex;
+  justify-content: space-between;
+}
+
+.text-truncate {
+  max-width: 600px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

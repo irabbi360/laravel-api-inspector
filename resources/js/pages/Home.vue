@@ -23,11 +23,13 @@
           :saved-responses="savedResponses"
           :sending="sending"
           :path-params="pathParams"
+          :query-params="queryParams"
           @update:requestBody="(value) => (requestBody = value)"
           @send-request="sendRequest"
           @save-response="saveCurrentResponse"
           @view-response="viewSavedResponse"
           @update:pathParams="(value) => (pathParams = value)"
+          @update:queryParams="(value) => (queryParams = value)"
           @delete-response="deleteSavedResponse"
         />
         <div v-else class="empty-state">
@@ -64,6 +66,7 @@ const lastResponse = ref(null)
 const savedResponses = ref([])
 const authToken = ref(localStorage.getItem('api-docs-auth-token') || '')
 const pathParams = ref({})
+const queryParams = ref({})
 
 const { showToast } = useToast()
 const { menus } = useMenu()
@@ -140,6 +143,15 @@ const selectEndpoint = (route) => {
   } else {
     pathParams.value = {}
   }
+
+  if (route.query_params && Object.keys(route.query_params).length > 0) {
+    queryParams.value = {}
+    Object.keys(route.query_params).forEach((param) => {
+      queryParams.value[param] = ''
+    })
+  } else {
+    queryParams.value = {}
+  }
   
   lastResponse.value = null
   loadSavedResponses()
@@ -168,6 +180,20 @@ const sendRequest = async () => {
       )
     })
     
+    // Remove existing query string from URL if present
+    urlString = urlString.split('?')[0]
+    
+    // Build query string from queryParams
+    const queryString = Object.entries(queryParams.value)
+      .filter(([_, value]) => value && value.trim() !== '')
+      .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+      .join('&')
+    
+    // Append query string to URL if it exists
+    if (queryString) {
+      urlString = urlString + '?' + queryString
+    }
+
     // Create full URL
     const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
     
@@ -175,6 +201,7 @@ const sendRequest = async () => {
       method: selectedRoute.value.http_method,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
       }
@@ -190,7 +217,7 @@ const sendRequest = async () => {
     ) {
       options.body = requestBody.value
     }
-
+    
     const response = await fetch(fullUrl, options)
     const contentType = response.headers.get('content-type')
 
