@@ -5,6 +5,8 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/irabbi360/laravel-api-inspector/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/irabbi360/laravel-api-inspector/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/irabbi360/laravel-api-inspector.svg?style=flat-square)](https://packagist.org/packages/irabbi360/laravel-api-inspector)
 
+![Laravel API Inspector](https://github.com/irabbi360/laravel-api-inspector/blob/main/banner_preview.png?raw=true)
+
 **Laravel API Inspector** automatically generates API documentation from your Laravel routes, FormRequest validation rules, and API Resources. It's like Postman + Swagger combined, but deeply integrated with Laravel.
 
 ## Features
