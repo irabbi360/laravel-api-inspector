@@ -649,14 +649,14 @@ class LaravelApiInspectorService
                 return [];
             }
 
-            // Match @LAPIQueryParams annotation
-            if (! preg_match('/@LAPIQueryParams\s+(.+?)(?=\n|$|@)/s', $docComment, $matches)) {
+            // Match @LAPIQueryParams annotation - improved to handle multi-line JSON
+            if (! preg_match('/@LAPIQueryParams\s+(.+?)(?=@|\*\/|\Z)/s', $docComment, $matches)) {
                 return [];
             }
 
             $paramString = trim($matches[1]);
 
-            // Try to parse as JSON first
+            // Try to parse as JSON first (checks for opening brace)
             if (preg_match('/^\s*\{/', $paramString)) {
                 return $this->parseJsonQueryParams($paramString);
             }
@@ -676,7 +676,11 @@ class LaravelApiInspectorService
     private function parseJsonQueryParams(string $jsonString): array
     {
         try {
-            $parsed = json_decode($jsonString, true);
+            // Clean up PHPDoc syntax (* and whitespace prefixes)
+            $cleanJson = preg_replace('/\s*\*\s*/', '', $jsonString);
+            $cleanJson = trim($cleanJson);
+
+            $parsed = json_decode($cleanJson, true);
 
             if (! is_array($parsed)) {
                 return [];
