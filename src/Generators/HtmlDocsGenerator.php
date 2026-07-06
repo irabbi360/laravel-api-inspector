@@ -794,7 +794,7 @@ $requestFields = [];
                     try {
                         const requestBody = textarea ? JSON.parse(textarea.value) : {};
 
-                        const response = await fetch('/api/test-request', {
+                        const response = await fetch('/api/api-inspector/test-request', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',

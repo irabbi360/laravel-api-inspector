@@ -208,11 +208,22 @@ class ApiInspectorController extends Controller
 
             // Make HTTP request to the endpoint
             $httpClient = new \GuzzleHttp\Client(['verify' => false]);
+
+            $forwardedHeaders = [
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ];
+
+            if ($request->hasHeader('Cookie')) {
+                $forwardedHeaders['Cookie'] = $request->header('Cookie');
+            }
+
+            if ($request->hasHeader('Authorization') && ! $request->hasHeader('Cookie')) {
+                $forwardedHeaders['Authorization'] = $request->header('Authorization');
+            }
+
             $requestOptions = [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Accept' => 'application/json',
-                ],
+                'headers' => $forwardedHeaders,
             ];
 
             if (in_array($method, ['POST', 'PUT', 'PATCH']) && ! empty($body)) {

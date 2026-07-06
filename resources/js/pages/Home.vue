@@ -228,6 +228,7 @@ const sendRequest = async () => {
     
     const options = {
       method: selectedRoute.value.http_method,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
