@@ -3,9 +3,10 @@
 use Illuminate\Support\Facades\Route;
 use Irabbi360\LaravelApiInspector\Http\Controllers\ApiInspectorController;
 use Irabbi360\LaravelApiInspector\Http\Controllers\DashboardController;
+use Irabbi360\LaravelApiInspector\Http\Middleware\ApiAnalyticsMiddleware;
 use Irabbi360\LaravelApiInspector\Http\Middleware\ApiInspectorMiddleware;
 
-Route::middleware(['api', ApiInspectorMiddleware::class])->prefix('api')->group(function () {
+Route::middleware(['api', ApiInspectorMiddleware::class, ApiAnalyticsMiddleware::class])->prefix('api')->group(function () {
     Route::get('api-inspector-docs', [ApiInspectorController::class, 'fetchApiInfo'])->name('api-inspector.docs.fetch');
     Route::get('api-inspector-docs/postman', [ApiInspectorController::class, 'postman'])->name('api-inspector.docs.postman');
     Route::get('api-inspector-postman', [ApiInspectorController::class, 'postman'])->name('api-inspector.postman');
