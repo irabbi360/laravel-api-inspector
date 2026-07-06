@@ -48,8 +48,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { useMenu } from '../composables/useMenu';
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
+import { useMenu } from '../composables/useMenu'
+import {
+  clearSelectedRouteFromUrl,
+  findRouteFromUrl,
+  syncSelectedRouteToUrl,
+} from '../composables/useSelectedEndpoint'
 import Topbar from '../components/Topbar.vue'
 import Sidebar from '../components/Sidebar.vue'
 import EndpointDetail from '../components/EndpointDetail.vue'
@@ -108,6 +113,8 @@ const fetchApiData = async () => {
       title: data.title || window.apiInspector?.title || 'API Documentation',
       version: data.version || '1.0.0'
     }
+
+    restoreSelectedRouteFromUrl()
   } catch (error) {
     console.error('Error fetching API data:', error)
     apiData.value = {
@@ -120,8 +127,18 @@ const fetchApiData = async () => {
   }
 }
 
-const selectEndpoint = (route) => {
+const scrollActiveSidebarItemIntoView = () => {
+  nextTick(() => {
+    document.querySelector('.sidebar-route.active')?.scrollIntoView({ block: 'nearest' })
+  })
+}
+
+const selectEndpoint = (route, { updateUrl = true } = {}) => {
   selectedRoute.value = JSON.parse(JSON.stringify(route))
+
+  if (updateUrl) {
+    syncSelectedRouteToUrl(route)
+  }
   
   // Initialize requestBody with structure from request_rules
   if (route.request_rules && Object.keys(route.request_rules).length > 0) {
@@ -155,6 +172,18 @@ const selectEndpoint = (route) => {
   
   lastResponse.value = null
   loadSavedResponses()
+  scrollActiveSidebarItemIntoView()
+}
+
+const restoreSelectedRouteFromUrl = () => {
+  const route = findRouteFromUrl(apiData.value.routes || [])
+
+  if (!route) {
+    clearSelectedRouteFromUrl()
+    return
+  }
+
+  selectEndpoint(route, { updateUrl: false })
 }
 
 const sendRequest = async () => {

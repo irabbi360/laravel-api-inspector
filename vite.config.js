@@ -12,6 +12,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'resources/js'),
     },
   },
+  test: {
+    environment: 'happy-dom',
+    include: ['resources/js/**/*.test.js'],
+  },
 
   build: {
     manifest: true,
