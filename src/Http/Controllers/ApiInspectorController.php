@@ -206,6 +206,26 @@ class ApiInspectorController extends Controller
                 return response()->json(['error' => 'URI is required'], 400);
             }
 
+            $routeInfo = \Irabbi360\LaravelApiInspector\Extractors\RouteExtractor::findRoute($uri, $method);
+
+            if ($routeInfo && $routeInfo['requires_auth'] && ! $request->hasHeader('Authorization')) {
+                return response()->json([
+                    'error' => 'Unauthorized - Authentication token required',
+                    'status' => 401,
+                ], 401);
+            }
+
+            // Backend validation of the request body against the endpoint's rules
+            $validation = $this->runBackendValidation($routeInfo, $body);
+
+            if ($validation && ! $validation['valid']) {
+                return response()->json([
+                    'error' => 'Request did not pass backend validation',
+                    'validation' => $validation,
+                    'status' => 422,
+                ], 422);
+            }
+
             // Make HTTP request to the endpoint
             $httpClient = new \GuzzleHttp\Client(['verify' => false]);
 
@@ -249,6 +269,26 @@ class ApiInspectorController extends Controller
                 'status' => 'failed',
             ], 500);
         }
+    }
+
+    /**
+     * Validate the test request body against the target route's rules on the backend.
+     *
+     * Returns null when backend validation is disabled or no controller can be resolved.
+     *
+     * @return array{validated: bool, valid: bool, message: string, errors: array}|null
+     */
+    protected function runBackendValidation(?array $routeInfo, array $body): ?array
+    {
+        if (! config('api-inspector.validate_test_requests', true)) {
+            return null;
+        }
+
+        if (! $routeInfo || empty($routeInfo['controller']) || $routeInfo['controller'] === 'Closure') {
+            return null;
+        }
+
+        return $this->service->validateTestRequest($routeInfo['controller'], $body);
     }
 
     /**

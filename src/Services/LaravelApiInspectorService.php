@@ -409,6 +409,82 @@ class LaravelApiInspectorService
     }
 
     /**
+     * Validate a test request body against the endpoint's FormRequest rules on the backend.
+     *
+     * @return array{validated: bool, valid: bool, message: string, errors: array}
+     */
+    public function validateTestRequest(string $controllerName, array $body): array
+    {
+        $rules = $this->getRawRequestRules($controllerName);
+
+        if (empty($rules)) {
+            return [
+                'validated' => false,
+                'valid' => true,
+                'message' => 'No validation rules found for this endpoint',
+                'errors' => [],
+            ];
+        }
+
+        $validator = \Illuminate\Support\Facades\Validator::make($body, $rules);
+
+        if ($validator->fails()) {
+            return [
+                'validated' => true,
+                'valid' => false,
+                'message' => 'Request body failed backend validation',
+                'errors' => $validator->errors()->toArray(),
+            ];
+        }
+
+        return [
+            'validated' => true,
+            'valid' => true,
+            'message' => 'Request body passed backend validation',
+            'errors' => [],
+        ];
+    }
+
+    /**
+     * Extract the raw Laravel validation rules from a route's FormRequest.
+     *
+     * @return array<string, mixed>
+     */
+    public function getRawRequestRules(string $controllerName): array
+    {
+        try {
+            $parsed = \Irabbi360\LaravelApiInspector\Support\ReflectionHelper::parseControllerString($controllerName);
+
+            if (! $parsed) {
+                return [];
+            }
+
+            $reflectionMethod = \Irabbi360\LaravelApiInspector\Support\ReflectionHelper::getMethod($parsed['class'], $parsed['method']);
+
+            if (! $reflectionMethod) {
+                return [];
+            }
+
+            $formRequestClass = \Irabbi360\LaravelApiInspector\Support\ReflectionHelper::hasFormRequestParameter($reflectionMethod);
+
+            if (! $formRequestClass || ! class_exists($formRequestClass) || ! method_exists($formRequestClass, 'rules')) {
+                return [];
+            }
+
+            try {
+                $instance = new $formRequestClass;
+                $rules = $instance->rules();
+
+                return is_array($rules) ? $rules : [];
+            } catch (\Exception $e) {
+                return [];
+            }
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
      * Save response to JSON file
      */
     public function saveResponseToJson(string $routeUri, string $routeMethod, array $responseData, string $responseStatus, string $timestamp): JsonResponse

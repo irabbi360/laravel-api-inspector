@@ -157,4 +157,15 @@ return [
         'schemes' => ['bearer', 'api-key', 'basic', 'oauth2'],
         'test_endpoint_prefix' => '/api/',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test Request Backend Validation
+    |--------------------------------------------------------------------------
+    | When enabled, the inspector will validate the request body sent through
+    | the "Try it out" / API tester against the endpoint's FormRequest rules
+    | on the backend before forwarding the request to the actual endpoint.
+    |
+    */
+    'validate_test_requests' => true,
 ];

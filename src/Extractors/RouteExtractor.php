@@ -119,6 +119,23 @@ class RouteExtractor
     }
 
     /**
+     * Find a specific route by URI and method
+     */
+    public static function findRoute(string $uri, string $method): ?array
+    {
+        $router = app(Router::class);
+        $method = strtoupper($method);
+
+        foreach ($router->getRoutes()->getRoutes() as $route) {
+            if ($route->uri === $uri && in_array($method, $route->methods)) {
+                return self::extractRoute($route);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Generate description for a route
      */
     public static function generateDescription(string $uri, string $method): string

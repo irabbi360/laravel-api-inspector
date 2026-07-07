@@ -197,6 +197,16 @@ const sendRequest = async () => {
     return
   }
 
+  if (selectedRoute.value.requires_auth && !authToken.value) {
+    showToast('Unauthorized: Auth token required for this endpoint', 'error')
+    lastResponse.value = {
+      status: 401,
+      data: { message: 'Unauthorized - Authentication token required' },
+      timestamp: new Date().toISOString()
+    }
+    return
+  }
+
   try {
     sending.value = true
     
