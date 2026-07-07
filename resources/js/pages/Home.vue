@@ -197,19 +197,9 @@ const sendRequest = async () => {
     return
   }
 
-  if (selectedRoute.value.requires_auth && !authToken.value) {
-    showToast('Unauthorized: Auth token required for this endpoint', 'error')
-    lastResponse.value = {
-      status: 401,
-      data: { message: 'Unauthorized - Authentication token required' },
-      timestamp: new Date().toISOString()
-    }
-    return
-  }
-
   try {
     sending.value = true
-    
+
     // Build URL with path parameters replaced
     let urlString = selectedRoute.value.uri
     Object.keys(pathParams.value).forEach((param) => {
@@ -218,49 +208,68 @@ const sendRequest = async () => {
         pathParams.value[param]
       )
     })
-    
+
     // Remove existing query string from URL if present
     urlString = urlString.split('?')[0]
-    
+
     // Build query string from queryParams
     const queryString = Object.entries(queryParams.value)
       .filter(([_, value]) => value && value.trim() !== '')
       .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
       .join('&')
-    
+
     // Append query string to URL if it exists
     if (queryString) {
       urlString = urlString + '?' + queryString
     }
 
-    // Create full URL
-    const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
-    
-    const options = {
-      method: selectedRoute.value.http_method,
-      // Do NOT send the browser session cookie. The API test request must be
-      // authenticated with the bearer token only, otherwise a logged-in web
-      // user's session would be used instead of the supplied API token.
-      credentials: 'omit',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest'
-      }
-    }
+    let response
 
     if (authToken.value) {
-      options.headers['Authorization'] = `Bearer ${authToken.value}`
+      // Direct fetch like Postman — no cookies, token-based auth only
+      const fullUrl = `${window.location.origin}/${urlString.replace(/^\//, '')}`
+
+      const options = {
+        method: selectedRoute.value.http_method,
+        credentials: 'omit',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'Authorization': `Bearer ${authToken.value}`
+        }
+      }
+
+      if (
+        selectedRoute.value.http_method !== 'GET' &&
+        selectedRoute.value.http_method !== 'HEAD'
+      ) {
+        options.body = requestBody.value
+      }
+
+      response = await fetch(fullUrl, options)
+    } else {
+      // No token supplied — route through the server-side proxy so the
+      // browser's session cookie authenticates the request as the logged-in user.
+      const proxyOptions = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          method: selectedRoute.value.http_method,
+          uri: urlString,
+          body: requestBody.value ? JSON.parse(requestBody.value) : {}
+        })
+      }
+
+      if (queryString) {
+        const parsed = JSON.parse(proxyOptions.body)
+        parsed.query = Object.fromEntries(new URLSearchParams(queryString))
+        proxyOptions.body = JSON.stringify(parsed)
+      }
+
+      response = await fetch('/api/api-inspector/test-request', proxyOptions)
     }
 
-    if (
-      selectedRoute.value.http_method !== 'GET' &&
-      selectedRoute.value.http_method !== 'HEAD'
-    ) {
-      options.body = requestBody.value
-    }
-    
-    const response = await fetch(fullUrl, options)
     const contentType = response.headers.get('content-type')
 
     let data = ''

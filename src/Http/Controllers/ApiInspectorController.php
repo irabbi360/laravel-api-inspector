@@ -234,16 +234,14 @@ class ApiInspectorController extends Controller
                 'Accept' => 'application/json',
             ];
 
-            // Forward the bearer token explicitly provided via the Authorization header
-            // so the test request is authenticated as the API token owner.
             if ($request->hasHeader('Authorization')) {
+                // Token-based auth: send only the bearer token. The web session
+                // cookie is deliberately excluded so the test request acts as the
+                // token owner, not the currently logged-in browser user.
                 $forwardedHeaders['Authorization'] = $request->header('Authorization');
-            }
-
-            // We intentionally do NOT forward the browser's web session cookie by
-            // default. Otherwise a logged-in web user's session would authenticate
-            // the API call instead of the provided bearer token. Opt-in via config.
-            if (config('api-inspector.test_request_forward_cookie', false) && $request->hasHeader('Cookie')) {
+            } elseif ($request->hasHeader('Cookie')) {
+                // No token provided — forward the browser's session cookie so the
+                // API request is authenticated as the web-logged-in user.
                 $forwardedHeaders['Cookie'] = $request->header('Cookie');
             }
 
