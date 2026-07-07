@@ -238,12 +238,14 @@ const sendRequest = async () => {
     
     const options = {
       method: selectedRoute.value.http_method,
-      credentials: 'include',
+      // Do NOT send the browser session cookie. The API test request must be
+      // authenticated with the bearer token only, otherwise a logged-in web
+      // user's session would be used instead of the supplied API token.
+      credentials: 'omit',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Requested-With': 'XMLHttpRequest',
-        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+        'X-Requested-With': 'XMLHttpRequest'
       }
     }
 
