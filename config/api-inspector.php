@@ -168,4 +168,17 @@ return [
     |
     */
     'validate_test_requests' => true,
+
+    /*
+    |--------------------------------------------------------------------------
+    | Test Request Header Forwarding
+    |--------------------------------------------------------------------------
+    | The API tester always forwards the Authorization header (bearer token)
+    | so requests are authenticated as the token owner. By default the
+    | browser's web session cookie is NOT forwarded, otherwise a logged-in
+    | web user's session would be used instead of the API token. Enable this
+    | only if you intentionally want cookie/session based authentication.
+    |
+    */
+    'test_request_forward_cookie' => false,
 ];
